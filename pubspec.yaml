@@ -1,0 +1,37 @@
+name: app_inventario_flutter
+description: "Sistema de gestión de inventario para PYME"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # BASE DE DATOS
+  sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0
+  path_provider: ^2.1.0
+  path: ^1.9.0
+  
+  # UI
+  google_fonts: ^6.2.0
+  flutter_slidable: ^3.0.1
+  flutter_svg: ^2.0.9
+  
+  # UTILIDADES
+  intl: ^0.19.0
+  mask_text_input_formatter: ^2.8.0
+  
+  # ESTADO
+  provider: ^6.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  
+flutter:
+  uses-material-design: true
