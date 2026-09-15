@@ -6,7 +6,7 @@ class ProveedorRepository {
 
   Future<List<Proveedor>> getAll({bool soloActivos = true}) async {
     final maps = await _db.query(
-      'proveedores',  // 🔥 AHORA ES POSICIONAL
+      'proveedores',
       where: soloActivos ? 'activo = 1' : null,
       orderBy: 'nombre ASC',
     );

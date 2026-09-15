@@ -31,51 +31,238 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> _onCreate(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE proveedores(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        cuit TEXT,
-        telefono TEXT,
-        email TEXT,
-        direccion TEXT,
-        contacto TEXT,
-        nota TEXT,
-        activo INTEGER DEFAULT 1,
-        fechaCreacion TEXT NOT NULL,
-        fechaModificacion TEXT NOT NULL
-      )
-    ''');
+    Future<void> _onCreate(Database db, int version) async {
+      // ==================== PROVEEDORES ====================
+      await db.execute('''
+        CREATE TABLE proveedores(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nombre TEXT NOT NULL,
+          cuit TEXT,
+          telefono TEXT,
+          email TEXT,
+          direccion TEXT,
+          contacto TEXT,
+          nota TEXT,
+          activo INTEGER DEFAULT 1,
+          fechaCreacion TEXT NOT NULL,
+          fechaModificacion TEXT NOT NULL
+        )
+      ''');
 
-    final now = DateTime.now().toIso8601String();
-    
-    await db.insert('proveedores', {
-      'nombre': 'Gonzalez Hnos SRL',
-      'cuit': '30-12345678-9',
-      'telefono': '+54 11 1234-5678',
-      'email': 'ventas@gonzalezhnos.com.ar',
-      'direccion': 'Av. Corrientes 1234, CABA',
-      'contacto': 'Juan Gonzalez',
-      'nota': 'Proveedor principal de electrónicos',
-      'activo': 1,
-      'fechaCreacion': now,
-      'fechaModificacion': now,
-    });
+      // ==================== PRODUCTOS ====================
+      await db.execute('''
+        CREATE TABLE productos(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          sku TEXT NOT NULL,
+          codigoBarras TEXT,
+          nombre TEXT NOT NULL,
+          descripcion TEXT,
+          categoriaId INTEGER,
+          marcaId INTEGER,
+          proveedorId INTEGER,
+          ubicacionId INTEGER,
+          modelo TEXT,
+          stockActual INTEGER DEFAULT 0,
+          stockMinimo INTEGER DEFAULT 0,
+          stockMaximo INTEGER DEFAULT 0,
+          unidadMedida TEXT DEFAULT 'Unidad',
+          precioCompra REAL DEFAULT 0,
+          precioVenta REAL DEFAULT 0,
+          precioSugerido REAL,
+          margenGanancia REAL,
+          fechaCompra TEXT,
+          numeroFactura TEXT,
+          peso REAL,
+          dimensiones TEXT,
+          mesesGarantia INTEGER,
+          fechaFinGarantia TEXT,
+          estaActivo INTEGER DEFAULT 1,
+          estaDisponible INTEGER DEFAULT 1,
+          estado TEXT DEFAULT 'en_stock',
+          fechaCreacion TEXT NOT NULL,
+          fechaUltimaModificacion TEXT NOT NULL,
+          nota TEXT
+        )
+      ''');
 
-    await db.insert('proveedores', {
-      'nombre': 'PH Mayorista SA',
-      'cuit': '30-87654321-9',
-      'telefono': '+54 11 9876-5432',
-      'email': 'info@phmayorista.com',
-      'direccion': 'Calle Falsa 123, CABA',
-      'contacto': 'Maria Perez',
-      'nota': 'Proveedor de electrodomésticos',
-      'activo': 1,
-      'fechaCreacion': now,
-      'fechaModificacion': now,
-    });
-  }
+       // ==================== CATEGORIAS ====================
+      await db.execute('''
+        CREATE TABLE categorias(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nombre TEXT NOT NULL,
+          descripcion TEXT,
+          categoriaPadreId INTEGER,
+          activa INTEGER DEFAULT 1,
+          fechaCreacion TEXT NOT NULL,
+          fechaModificacion TEXT NOT NULL
+        )
+      ''');
+
+      // ==================== DATOS DE EJEMPLO ====================
+      final now = DateTime.now().toIso8601String();  // 🔥 SOLO UNA VEZ
+      
+      // Proveedores de ejemplo
+      await db.insert('proveedores', {
+        'nombre': 'Gonzalez Hnos SRL',
+        'cuit': '30-12345678-9',
+        'telefono': '+54 11 1234-5678',
+        'email': 'ventas@gonzalezhnos.com.ar',
+        'direccion': 'Av. Corrientes 1234, CABA',
+        'contacto': 'Juan Gonzalez',
+        'nota': 'Proveedor principal de electrónicos',
+        'activo': 1,
+        'fechaCreacion': now,
+        'fechaModificacion': now,
+      });
+
+      await db.insert('proveedores', {
+        'nombre': 'PH Mayorista SA',
+        'cuit': '30-87654321-9',
+        'telefono': '+54 11 9876-5432',
+        'email': 'info@phmayorista.com',
+        'direccion': 'Calle Falsa 123, CABA',
+        'contacto': 'Maria Perez',
+        'nota': 'Proveedor de electrodomésticos',
+        'activo': 1,
+        'fechaCreacion': now,
+        'fechaModificacion': now,
+      });
+
+      // 🔥 Productos de ejemplo (SIN volver a declarar 'now')
+      final productosEjemplo = [
+        {
+          'sku': 'CEL-SAM-A17-001',
+          'codigoBarras': '7891234567890',
+          'nombre': 'Samsung Galaxy A17',
+          'descripcion': 'Smartphone 128GB, 6GB RAM',
+          'categoriaId': 1,
+          'marcaId': 1,
+          'proveedorId': 1,
+          'modelo': 'A17',
+          'stockActual': 15,
+          'stockMinimo': 5,
+          'stockMaximo': 50,
+          'precioCompra': 180000.0,
+          'precioVenta': 250000.0,
+          'fechaCompra': now,
+          'estaActivo': 1,
+          'estaDisponible': 1,
+          'estado': 'en_stock',
+          'fechaCreacion': now,
+          'fechaUltimaModificacion': now,
+        },
+        {
+          'sku': 'LAV-DRE-SW120-001',
+          'codigoBarras': '7891234567891',
+          'nombre': 'Lavarropas Drean Next 8kg',
+          'descripcion': 'Lavarropas automático 8kg',
+          'categoriaId': 2,
+          'marcaId': 2,
+          'proveedorId': 2,
+          'modelo': 'SW120PN',
+          'stockActual': 3,
+          'stockMinimo': 5,
+          'stockMaximo': 20,
+          'precioCompra': 450000.0,
+          'precioVenta': 620000.0,
+          'fechaCompra': now,
+          'estaActivo': 1,
+          'estaDisponible': 1,
+          'estado': 'en_stock',
+          'fechaCreacion': now,
+          'fechaUltimaModificacion': now,
+        },
+        {
+          'sku': 'COL-SUA-2P-001',
+          'codigoBarras': '7891234567892',
+          'nombre': 'Colchón Suavestar 2 Plazas',
+          'descripcion': 'Colchón resortes 2 plazas',
+          'categoriaId': 3,
+          'marcaId': 3,
+          'proveedorId': 1,
+          'modelo': 'Confort',
+          'stockActual': 0,
+          'stockMinimo': 3,
+          'stockMaximo': 15,
+          'precioCompra': 220000.0,
+          'precioVenta': 320000.0,
+          'fechaCompra': now,
+          'estaActivo': 1,
+          'estaDisponible': 1,
+          'estado': 'agotado',
+          'fechaCreacion': now,
+          'fechaUltimaModificacion': now,
+        },
+        {
+          'sku': 'AUR-JBL-TUNE-001',
+          'codigoBarras': '7891234567893',
+          'nombre': 'Auriculares JBL Tune 510BT',
+          'descripcion': 'Auriculares inalámbricos',
+          'categoriaId': 1,
+          'marcaId': 4,
+          'proveedorId': 1,
+          'modelo': 'Tune 510BT',
+          'stockActual': 25,
+          'stockMinimo': 10,
+          'stockMaximo': 100,
+          'precioCompra': 45000.0,
+          'precioVenta': 72000.0,
+          'fechaCompra': now,
+          'estaActivo': 1,
+          'estaDisponible': 1,
+          'estado': 'en_stock',
+          'fechaCreacion': now,
+          'fechaUltimaModificacion': now,
+        },
+        {
+          'sku': 'TAB-LEN-M10-001',
+          'codigoBarras': '7891234567894',
+          'nombre': 'Tablet Lenovo M10',
+          'descripcion': 'Tablet 10" 64GB',
+          'categoriaId': 1,
+          'marcaId': 5,
+          'proveedorId': 2,
+          'modelo': 'M10',
+          'stockActual': 8,
+          'stockMinimo': 5,
+          'stockMaximo': 30,
+          'precioCompra': 150000.0,
+          'precioVenta': 210000.0,
+          'fechaCompra': now,
+          'estaActivo': 1,
+          'estaDisponible': 1,
+          'estado': 'en_stock',
+          'fechaCreacion': now,
+          'fechaUltimaModificacion': now,
+        },
+      ];
+
+      for (final producto in productosEjemplo) {
+        await db.insert('productos', producto);
+      }
+
+      // Categorías de ejemplo
+      final categoriasEjemplo = [
+        {'nombre': 'Electrónica', 'descripcion': 'Productos electrónicos', 'categoriaPadreId': null},
+        {'nombre': 'Celulares', 'descripcion': 'Smartphones y accesorios', 'categoriaPadreId': 1},
+        {'nombre': 'Smartphones', 'descripcion': 'Teléfonos inteligentes', 'categoriaPadreId': 2},
+        {'nombre': 'Accesorios', 'descripcion': 'Fundas, cargadores', 'categoriaPadreId': 2},
+        {'nombre': 'Electrodomésticos', 'descripcion': 'Línea blanca', 'categoriaPadreId': null},
+        {'nombre': 'Lavarropas', 'descripcion': 'Lavadoras', 'categoriaPadreId': 5},
+        {'nombre': 'Heladeras', 'descripcion': 'Refrigeradores', 'categoriaPadreId': 5},
+        {'nombre': 'Muebles', 'descripcion': 'Mobiliario', 'categoriaPadreId': null},
+        {'nombre': 'Colchones', 'descripcion': 'Colchones y sommiers', 'categoriaPadreId': 8},
+      ];
+
+      for (final cat in categoriasEjemplo) {
+        await db.insert('categorias', {
+          ...cat,
+          'activa': 1,
+          'fechaCreacion': now,
+          'fechaModificacion': now,
+        });
+      }
+    }
 
   // 🔥 IMPORTANTE: 'table' es POSICIONAL (no named)
   Future<List<Map<String, dynamic>>> query(

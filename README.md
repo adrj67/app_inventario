@@ -1,5 +1,16 @@
 # app_inventario_flutter
 
+*** 
+Base de Datos: Documentos\inventario.db
+
+Remove-Item "$env:USERPROFILE\Documents\inventario.db" -ErrorAction SilentlyContinue
+
+(C:\Users\***\AppData\Roaming\com.example\app_inventario_flutter)
+
+***
+
+
+
 A new Flutter project.
 
 lib/

@@ -4,6 +4,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';  // 🔥 NUEVO
 import 'dart:io';                                       // 🔥 NUEVO
 import 'database/database_helper.dart';
 import 'screens/main_layout.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';  // 🔥 NUEVO
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +28,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Inventario Pro',
+      locale: const Locale('es', 'AR'),
+      supportedLocales: const [
+        Locale('es', 'AR'),
+        Locale('es', 'ES'),
+        Locale('en', 'US'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,

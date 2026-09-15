@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'main_drawer.dart';
 import 'pages/proveedores/proveedores_page.dart';
+import 'pages/productos/productos_page.dart';
+import 'pages/categorias/categorias_page.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -13,9 +15,9 @@ class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const ProveedoresPage(),  // 🔥 AHORA SÍ
-    const Center(child: Text('Productos (Próximamente)', style: TextStyle(fontSize: 24))),
-    const Center(child: Text('Categorías (Próximamente)', style: TextStyle(fontSize: 24))),
+    const ProveedoresPage(),  // 0
+    const ProductosPage(), // 1
+    const CategoriasPage(),   // 2
     const Center(child: Text('Clientes (Próximamente)', style: TextStyle(fontSize: 24))),
     const Center(child: Text('Ubicaciones (Próximamente)', style: TextStyle(fontSize: 24))),
     const Center(child: Text('Movimientos (Próximamente)', style: TextStyle(fontSize: 24))),
