@@ -98,6 +98,34 @@ class DatabaseHelper {
         )
       ''');
 
+      // ==================== MARCAS ====================
+      await db.execute('''
+        CREATE TABLE marcas(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nombre TEXT NOT NULL,
+          descripcion TEXT,
+          activa INTEGER DEFAULT 1,
+          fechaCreacion TEXT NOT NULL,
+          fechaModificacion TEXT NOT NULL
+        )
+      ''');
+
+        // ==================== UBICACIONES ====================
+        await db.execute('''
+          CREATE TABLE ubicaciones(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            deposito TEXT NOT NULL,
+            pasillo TEXT,
+            estante TEXT,
+            nivel TEXT,
+            codigoQR TEXT,
+            descripcion TEXT,
+            activo INTEGER DEFAULT 1,
+            fechaCreacion TEXT NOT NULL,
+            fechaModificacion TEXT NOT NULL
+          )
+        ''');
+
       // ==================== DATOS DE EJEMPLO ====================
       final now = DateTime.now().toIso8601String();  // 🔥 SOLO UNA VEZ
       
@@ -258,6 +286,45 @@ class DatabaseHelper {
         await db.insert('categorias', {
           ...cat,
           'activa': 1,
+          'fechaCreacion': now,
+          'fechaModificacion': now,
+        });
+      }
+
+      // Marcas de ejemplo
+      final marcasEjemplo = [
+        {'nombre': 'Samsung', 'descripcion': 'Electrónica coreana'},
+        {'nombre': 'Drean', 'descripcion': 'Electrodomésticos argentinos'},
+        {'nombre': 'Suavestar', 'descripcion': 'Colchones'},
+        {'nombre': 'JBL', 'descripcion': 'Audio profesional'},
+        {'nombre': 'Lenovo', 'descripcion': 'Tecnología china'},
+        {'nombre': 'Sony', 'descripcion': 'Electrónica japonesa'},
+        {'nombre': 'LG', 'descripcion': 'Electrónica coreana'},
+        {'nombre': 'Philips', 'descripcion': 'Electrónica holandesa'},
+      ];
+
+      for (final marca in marcasEjemplo) {
+        await db.insert('marcas', {
+          ...marca,
+          'activa': 1,
+          'fechaCreacion': now,
+          'fechaModificacion': now,
+        });
+      }
+
+      // Ubicaciones de ejemplo
+      final ubicacionesEjemplo = [
+        {'deposito': 'Depósito Central', 'pasillo': 'A', 'estante': '1', 'nivel': '1', 'descripcion': 'Productos electrónicos'},
+        {'deposito': 'Depósito Central', 'pasillo': 'A', 'estante': '2', 'nivel': '1', 'descripcion': 'Celulares'},
+        {'deposito': 'Depósito Central', 'pasillo': 'B', 'estante': '1', 'nivel': '1', 'descripcion': 'Electrodomésticos'},
+        {'deposito': 'Depósito Norte', 'pasillo': 'A', 'estante': '1', 'nivel': '1', 'descripcion': 'Muebles grandes'},
+        {'deposito': 'Depósito Norte', 'pasillo': 'A', 'estante': '1', 'nivel': '2', 'descripcion': 'Colchones'},
+      ];
+
+      for (final ubic in ubicacionesEjemplo) {
+        await db.insert('ubicaciones', {
+          ...ubic,
+          'activo': 1,
           'fechaCreacion': now,
           'fechaModificacion': now,
         });
