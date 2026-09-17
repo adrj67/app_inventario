@@ -55,6 +55,13 @@ class MainDrawer extends StatelessWidget {
           _buildItem(context, Icons.history, 'Movimientos', 6),
           _buildItem(context, Icons.list_alt, 'Listados', 7),
           const Divider(),
+          _buildItem(context, Icons.settings, 'Configuración', 8),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('Acerca de'),
+            onTap: () => _showAbout(context),
+          ),
+          const Divider(),
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('Acerca de'),

@@ -160,6 +160,23 @@ class DatabaseHelper {
           )
         ''');
 
+        // ==================== CONFIGURACIÓN ====================
+        await db.execute('''
+          CREATE TABLE configuracion(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombreEmpresa TEXT NOT NULL,
+            cuit TEXT,
+            direccion TEXT,
+            telefono TEXT,
+            email TEXT,
+            sitioWeb TEXT,
+            condicionIva TEXT,
+            logoPath TEXT,
+            observaciones TEXT,
+            fechaModificacion TEXT NOT NULL
+          )
+        ''');
+
       // ==================== DATOS DE EJEMPLO ====================
       final now = DateTime.now().toIso8601String();  // 🔥 SOLO UNA VEZ
       
@@ -421,6 +438,20 @@ class DatabaseHelper {
           'fechaModificacion': now,
         });
       }
+
+      // Configuración por defecto
+      await db.insert('configuracion', {
+        'nombreEmpresa': 'Mi Empresa SRL',
+        'cuit': '30-12345678-9',
+        'direccion': 'Av. Corrientes 1234, CABA',
+        'telefono': '+54 11 1234-5678',
+        'email': 'contacto@miempresa.com.ar',
+        'sitioWeb': 'www.miempresa.com.ar',
+        'condicionIva': 'Responsable Inscripto',
+        'logoPath': null,
+        'observaciones': null,
+        'fechaModificacion': now,
+      });
     }
 
   // 🔥 IMPORTANTE: 'table' es POSICIONAL (no named)

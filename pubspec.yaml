@@ -28,9 +28,19 @@ dependencies:
   # ESTADO
   provider: ^6.1.1
 
-  # 🔥 NUEVO: Localizaciones
+  # Localizaciones
   flutter_localizations:
     sdk: flutter
+
+  # PDF
+  pdf: ^3.11.1
+  printing: ^5.13.2
+
+  # CSV
+  csv: ^6.0.0
+  
+  # Compartir archivos
+  share_plus: ^10.0.2
 
 dev_dependencies:
   flutter_test:
