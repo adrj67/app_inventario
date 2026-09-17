@@ -7,6 +7,7 @@ import 'pages/marcas/marcas_page.dart';
 import 'pages/ubicaciones/ubicaciones_page.dart';
 import 'pages/clientes/clientes_page.dart';
 import 'pages/movimientos/movimientos_page.dart';
+import 'pages/listados/listados_page.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -25,8 +26,8 @@ class _MainLayoutState extends State<MainLayout> {
     const MarcasPage(),       // 3
     const ClientesPage(),     // 4
     const UbicacionesPage(),  // 5
-     const MovimientosPage(), // 6
-    const Center(child: Text('Listados (Próximamente)', style: TextStyle(fontSize: 24))), // 7
+    const MovimientosPage(),  // 6
+    const ListadosPage(),     // 7
   ];
 
   @override
