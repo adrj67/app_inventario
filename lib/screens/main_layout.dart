@@ -5,6 +5,8 @@ import 'pages/productos/productos_page.dart';
 import 'pages/categorias/categorias_page.dart';
 import 'pages/marcas/marcas_page.dart';
 import 'pages/ubicaciones/ubicaciones_page.dart';
+import 'pages/clientes/clientes_page.dart';
+import 'pages/movimientos/movimientos_page.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -18,12 +20,12 @@ class _MainLayoutState extends State<MainLayout> {
 
   final List<Widget> _pages = [
     const ProveedoresPage(),  // 0
-    const ProductosPage(), // 1
+    const ProductosPage(),    // 1
     const CategoriasPage(),   // 2
-    const MarcasPage(),  // 3
-    const Center(child: Text('Clientes (Próximamente)', style: TextStyle(fontSize: 24))), // 4
+    const MarcasPage(),       // 3
+    const ClientesPage(),     // 4
     const UbicacionesPage(),  // 5
-    const Center(child: Text('Movimientos (Próximamente)', style: TextStyle(fontSize: 24))), // 6
+     const MovimientosPage(), // 6
     const Center(child: Text('Listados (Próximamente)', style: TextStyle(fontSize: 24))), // 7
   ];
 

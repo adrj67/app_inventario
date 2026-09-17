@@ -126,6 +126,40 @@ class DatabaseHelper {
           )
         ''');
 
+        // ==================== CLIENTES ====================
+        await db.execute('''
+          CREATE TABLE clientes(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            cuit TEXT,
+            telefono TEXT,
+            email TEXT,
+            direccion TEXT,
+            localidad TEXT,
+            nota TEXT,
+            activo INTEGER DEFAULT 1,
+            fechaCreacion TEXT NOT NULL,
+            fechaModificacion TEXT NOT NULL
+          )
+        ''');
+
+        // ==================== MOVIMIENTOS ====================
+        await db.execute('''
+          CREATE TABLE movimientos(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            productoId INTEGER NOT NULL,
+            tipo TEXT NOT NULL,
+            cantidad INTEGER NOT NULL,
+            precioUnitario REAL DEFAULT 0,
+            motivo TEXT,
+            nota TEXT,
+            numeroFactura TEXT,
+            fecha TEXT NOT NULL,
+            usuario TEXT,
+            fechaCreacion TEXT NOT NULL
+          )
+        ''');
+
       // ==================== DATOS DE EJEMPLO ====================
       final now = DateTime.now().toIso8601String();  // 🔥 SOLO UNA VEZ
       
@@ -324,6 +358,64 @@ class DatabaseHelper {
       for (final ubic in ubicacionesEjemplo) {
         await db.insert('ubicaciones', {
           ...ubic,
+          'activo': 1,
+          'fechaCreacion': now,
+          'fechaModificacion': now,
+        });
+      }
+
+      // Clientes de ejemplo
+      final clientesEjemplo = [
+        {
+          'nombre': 'Consumidor Final',
+          'cuit': '20-12345678-9',
+          'telefono': '+54 11 5555-1234',
+          'email': 'consumidor.final@email.com',
+          'direccion': 'Av. Rivadavia 1234',
+          'localidad': 'CABA',
+          'nota': 'Cliente frecuente',
+        },
+        {
+          'nombre': 'María González',
+          'cuit': '27-87654321-4',
+          'telefono': '+54 11 5555-5678',
+          'email': 'maria.gonzalez@email.com',
+          'direccion': 'Calle Mitre 567',
+          'localidad': 'Vicente López',
+          'nota': null,
+        },
+        {
+          'nombre': 'Empresa XYZ SRL',
+          'cuit': '30-71234567-8',
+          'telefono': '+54 11 4444-9876',
+          'email': 'compras@empresaXYZ.com',
+          'direccion': 'Av. Corrientes 1234, Piso 5',
+          'localidad': 'CABA',
+          'nota': 'Cliente corporativo - paga a 30 días',
+        },
+        {
+          'nombre': 'Carlos Rodríguez',
+          'cuit': '20-45678912-3',
+          'telefono': '+54 11 6666-7890',
+          'email': 'carlos.r@email.com',
+          'direccion': 'Calle Belgrano 890',
+          'localidad': 'San Isidro',
+          'nota': null,
+        },
+        {
+          'nombre': 'Lucía Fernández',
+          'cuit': '27-98765432-1',
+          'telefono': '+54 11 7777-2345',
+          'email': 'lucia.f@email.com',
+          'direccion': 'Av. Santa Fe 3456',
+          'localidad': 'CABA',
+          'nota': 'Prefiere contacto por WhatsApp',
+        },
+      ];
+
+      for (final cliente in clientesEjemplo) {
+        await db.insert('clientes', {
+          ...cliente,
           'activo': 1,
           'fechaCreacion': now,
           'fechaModificacion': now,
