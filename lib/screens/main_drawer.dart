@@ -39,7 +39,7 @@ class MainDrawer extends StatelessWidget {
                 Text(
                   'Sistema de Gestión',
                   style: TextStyle(
-                    color: Colors.white70, // 🔥 CORREGIDO: shade200 → Colors.white70
+                    color: Colors.white70,
                     fontSize: 14,
                   ),
                 ),
@@ -53,9 +53,10 @@ class MainDrawer extends StatelessWidget {
           _buildItem(context, Icons.people, 'Clientes', 4),
           _buildItem(context, Icons.location_on, 'Ubicaciones', 5),
           _buildItem(context, Icons.history, 'Movimientos', 6),
-          _buildItem(context, Icons.list_alt, 'Listados', 7),
+          _buildItem(context, Icons.request_quote, 'Presupuestos', 7),
+          _buildItem(context, Icons.list_alt, 'Listados', 8),
           const Divider(),
-          _buildItem(context, Icons.settings, 'Configuración', 8),
+          _buildItem(context, Icons.settings, 'Configuración', 9),
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('Acerca de'),
@@ -95,7 +96,7 @@ class MainDrawer extends StatelessWidget {
     );
   }
 
-  // 🔥 CORREGIDO: método con context como parámetro
+  // método con context como parámetro
   void _showAbout(BuildContext context) {
     showDialog(
       context: context,

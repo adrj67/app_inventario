@@ -9,6 +9,7 @@ import 'pages/clientes/clientes_page.dart';
 import 'pages/movimientos/movimientos_page.dart';
 import 'pages/listados/listados_page.dart';
 import 'pages/configuracion/configuracion_page.dart';
+import 'pages/presupuestos/presupuestos_page.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -28,8 +29,9 @@ class _MainLayoutState extends State<MainLayout> {
     const ClientesPage(),     // 4
     const UbicacionesPage(),  // 5
     const MovimientosPage(),  // 6
-    const ListadosPage(),     // 7
-    const ConfiguracionPage(),// 8
+    const PresupuestosPage(), // 7
+    const ListadosPage(),     // 8
+    const ConfiguracionPage(),// 9
   ];
 
   @override

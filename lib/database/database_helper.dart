@@ -177,6 +177,39 @@ class DatabaseHelper {
           )
         ''');
 
+        // ==================== PRESUPUESTOS ====================
+        await db.execute('''
+          CREATE TABLE presupuestos(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            numero TEXT NOT NULL,
+            clienteId INTEGER,
+            fecha TEXT NOT NULL,
+            fechaVencimiento TEXT NOT NULL,
+            subtotal REAL DEFAULT 0,
+            iva REAL DEFAULT 0,
+            total REAL DEFAULT 0,
+            porcentajeIva REAL DEFAULT 21,
+            estado TEXT DEFAULT 'pendiente',
+            nota TEXT,
+            fechaCreacion TEXT NOT NULL,
+            fechaModificacion TEXT NOT NULL
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE presupuesto_items(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            presupuestoId INTEGER NOT NULL,
+            productoId INTEGER NOT NULL,
+            nombreProducto TEXT NOT NULL,
+            sku TEXT NOT NULL,
+            cantidad INTEGER NOT NULL,
+            precioUnitario REAL NOT NULL,
+            subtotal REAL NOT NULL,
+            nota TEXT
+          )
+        ''');
+
       // ==================== DATOS DE EJEMPLO ====================
       final now = DateTime.now().toIso8601String();  // 🔥 SOLO UNA VEZ
       
