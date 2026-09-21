@@ -32,6 +32,8 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
+  url_launcher: ^6.3.0
+
   # PDF
   pdf: ^3.11.1
   printing: ^5.13.2

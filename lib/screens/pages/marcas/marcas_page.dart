@@ -3,6 +3,7 @@ import '../../../database/marca_repository.dart';
 import '../../../models/marca.dart';
 import '../../../widgets/search_field.dart';
 import 'marca_form.dart';
+import '../../../widgets/export_button.dart';
 
 class MarcasPage extends StatefulWidget {
   const MarcasPage({super.key});
@@ -176,6 +177,21 @@ class _MarcasPageState extends State<MarcasPage> {
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              ExportButton(
+                titulo: 'Marcas',
+                headers: const ['ID', 'Nombre', 'Descripción', 'Estado'],
+                rows: _filtered.map((m) => [
+                  (m.id ?? '').toString(),
+                  m.nombre,
+                  m.descripcion ?? '',
+                  m.activa ? 'Activa' : 'Inactiva',
+                ]).toList(),
+                color: Colors.teal,
               ),
             ],
           ),

@@ -3,7 +3,7 @@ import '../../../database/proveedor_repository.dart';
 import '../../../models/proveedor.dart';
 import '../../../widgets/search_field.dart';
 import 'proveedor_form.dart';
-
+import '../../../widgets/export_button.dart';
 
 class ProveedoresPage extends StatefulWidget {
   const ProveedoresPage({super.key});
@@ -15,7 +15,7 @@ class ProveedoresPage extends StatefulWidget {
 class _ProveedoresPageState extends State<ProveedoresPage> {
   final ProveedorRepository _repository = ProveedorRepository();
   final TextEditingController _searchController = TextEditingController();
-  
+
   List<Proveedor> _proveedores = [];
   List<Proveedor> _filtered = [];
   bool _isLoading = true;
@@ -34,7 +34,7 @@ class _ProveedoresPageState extends State<ProveedoresPage> {
 
   Future<void> _loadProveedores() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final lista = await _repository.getAll(soloActivos: true);
       setState(() {
@@ -57,7 +57,7 @@ class _ProveedoresPageState extends State<ProveedoresPage> {
       setState(() => _filtered = _proveedores);
       return;
     }
-    
+
     final q = query.toLowerCase();
     setState(() {
       _filtered = _proveedores.where((p) {
@@ -119,6 +119,7 @@ class _ProveedoresPageState extends State<ProveedoresPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // IZQUIERDA: título
           Row(
             children: [
               Container(
@@ -147,13 +148,44 @@ class _ProveedoresPageState extends State<ProveedoresPage> {
                   ),
                   Text(
                     '${_filtered.length} proveedores registrados',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
               ),
+            ],
+          ),
+          // DERECHA: botones
+          Row(
+            children: [
+              ExportButton(
+                titulo: 'Proveedores',
+                headers: const [
+                  'ID',
+                  'Nombre',
+                  'CUIT',
+                  'Teléfono',
+                  'Email',
+                  'Dirección',
+                  'Contacto',
+                  'Estado',
+                ],
+                rows: _filtered
+                    .map(
+                      (p) => [
+                        (p.id ?? '').toString(),
+                        p.nombre,
+                        p.cuit ?? '',
+                        p.telefono ?? '',
+                        p.email ?? '',
+                        p.direccion ?? '',
+                        p.contacto ?? '',
+                        p.activo ? 'Activo' : 'Inactivo',
+                      ],
+                    )
+                    .toList(),
+                color: Colors.blue,
+              ),
+              const SizedBox(width: 12),
             ],
           ),
           ElevatedButton.icon(
@@ -187,11 +219,7 @@ class _ProveedoresPageState extends State<ProveedoresPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.business_center,
-              size: 80,
-              color: Colors.grey.shade300,
-            ),
+            Icon(Icons.business_center, size: 80, color: Colors.grey.shade300),
             const SizedBox(height: 16),
             Text(
               _searchController.text.isEmpty
@@ -208,10 +236,7 @@ class _ProveedoresPageState extends State<ProveedoresPage> {
               _searchController.text.isEmpty
                   ? 'Presiona "Nuevo Proveedor" para comenzar'
                   : 'Intenta con otros términos de búsqueda',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade400,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
             ),
           ],
         ),
@@ -247,7 +272,9 @@ class _ProveedoresPageState extends State<ProveedoresPage> {
             Text('Eliminar Proveedor'),
           ],
         ),
-        content: Text('¿Estás seguro que deseas eliminar a "${proveedor.nombre}"?'),
+        content: Text(
+          '¿Estás seguro que deseas eliminar a "${proveedor.nombre}"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -355,11 +382,18 @@ class _ProveedorTile extends StatelessWidget {
                     if (proveedor.contacto != null)
                       Row(
                         children: [
-                          Icon(Icons.person, size: 14, color: Colors.grey.shade600),
+                          Icon(
+                            Icons.person,
+                            size: 14,
+                            color: Colors.grey.shade600,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             proveedor.contacto!,
-                            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ],
                       ),
@@ -367,14 +401,22 @@ class _ProveedorTile extends StatelessWidget {
                     Row(
                       children: [
                         if (proveedor.telefono != null) ...[
-                          Icon(Icons.phone, size: 14, color: Colors.grey.shade600),
+                          Icon(
+                            Icons.phone,
+                            size: 14,
+                            color: Colors.grey.shade600,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             proveedor.telefono!,
-                            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ],
-                        if (proveedor.telefono != null && proveedor.email != null)
+                        if (proveedor.telefono != null &&
+                            proveedor.email != null)
                           Container(
                             width: 4,
                             height: 4,
@@ -388,7 +430,10 @@ class _ProveedorTile extends StatelessWidget {
                           Expanded(
                             child: Text(
                               proveedor.email!,
-                              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),

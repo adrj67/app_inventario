@@ -6,6 +6,7 @@ import '../../../models/movimiento.dart';
 import '../../../models/producto.dart';
 import '../../../widgets/search_field.dart';
 import 'movimiento_form.dart';
+import '../../../widgets/export_button.dart';
 
 class MovimientosPage extends StatefulWidget {
   const MovimientosPage({super.key});
@@ -175,6 +176,32 @@ class _MovimientosPageState extends State<MovimientosPage> {
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              ExportButton(
+                titulo: 'Movimientos',
+                headers: const [
+                  'ID', 'Producto', 'Tipo', 'Cantidad', 'Precio Unit.',
+                  'Total', 'Motivo', 'Fecha', 'Factura',
+                ],
+                rows: _filtered.map((m) {
+                  final producto = _productosMap[m.productoId];
+                  return [
+                    (m.id ?? '').toString(),
+                    producto?.nombre ?? '(eliminado)',
+                    m.tipo,
+                    m.cantidad.toString(),
+                    m.precioUnitario.toStringAsFixed(2),
+                    m.total.toStringAsFixed(2),
+                    m.motivo ?? '',
+                    DateFormat('dd/MM/yyyy HH:mm').format(m.fecha),
+                    m.numeroFactura ?? '',
+                  ];
+                }).toList(),
+                color: Colors.amber,
               ),
             ],
           ),

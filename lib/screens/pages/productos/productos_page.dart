@@ -4,6 +4,7 @@ import '../../../database/producto_repository.dart';
 import '../../../models/producto.dart';
 import '../../../widgets/search_field.dart';
 import 'producto_form.dart';
+import '../../../widgets/export_button.dart';
 
 class ProductosPage extends StatefulWidget {
   const ProductosPage({super.key});
@@ -213,6 +214,30 @@ class _ProductosPageState extends State<ProductosPage> {
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              ExportButton(
+                titulo: 'Productos',
+                headers: const [
+                  'ID', 'SKU', 'Nombre', 'Modelo', 'Stock', 'Stock Mín.',
+                  'Unidad', 'Precio Compra', 'Precio Venta', 'Estado',
+                ],
+                rows: _filtered.map((p) => [
+                  (p.id ?? '').toString(),
+                  p.sku,
+                  p.nombre,
+                  p.modelo ?? '',
+                  p.stockActual.toString(),
+                  p.stockMinimo.toString(),
+                  p.unidadMedida,
+                  p.precioCompra.toStringAsFixed(2),
+                  p.precioVenta.toStringAsFixed(2),
+                  p.estaAgotado ? 'Agotado' : (p.tieneStockBajo ? 'Stock Bajo' : 'En Stock'),
+                ]).toList(),
+                color: Colors.blue,
               ),
             ],
           ),

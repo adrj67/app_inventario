@@ -3,6 +3,7 @@ import '../../../database/cliente_repository.dart';
 import '../../../models/cliente.dart';
 import '../../../widgets/search_field.dart';
 import 'cliente_form.dart';
+import '../../../widgets/export_button.dart';
 
 class ClientesPage extends StatefulWidget {
   const ClientesPage({super.key});
@@ -179,6 +180,28 @@ class _ClientesPageState extends State<ClientesPage> {
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              ExportButton(
+                titulo: 'Clientes',
+                headers: const [
+                  'ID', 'Nombre', 'CUIT', 'Teléfono', 'Email',
+                  'Dirección', 'Localidad', 'Estado',
+                ],
+                rows: _filtered.map((c) => [
+                  (c.id ?? '').toString(),
+                  c.nombre,
+                  c.cuit ?? '',
+                  c.telefono ?? '',
+                  c.email ?? '',
+                  c.direccion ?? '',
+                  c.localidad ?? '',
+                  c.activo ? 'Activo' : 'Inactivo',
+                ]).toList(),
+                color: Colors.cyan,
               ),
             ],
           ),

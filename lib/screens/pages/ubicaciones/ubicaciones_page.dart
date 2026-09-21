@@ -3,6 +3,7 @@ import '../../../database/ubicacion_repository.dart';
 import '../../../models/ubicacion.dart';
 import '../../../widgets/search_field.dart';
 import 'ubicacion_form.dart';
+import '../../../widgets/export_button.dart';
 
 class UbicacionesPage extends StatefulWidget {
   const UbicacionesPage({super.key});
@@ -178,6 +179,26 @@ class _UbicacionesPageState extends State<UbicacionesPage> {
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              ExportButton(
+                titulo: 'Ubicaciones',
+                headers: const [
+                  'ID', 'Depósito', 'Pasillo', 'Estante', 'Nivel', 'Código QR', 'Descripción',
+                ],
+                rows: _filtered.map((u) => [
+                  (u.id ?? '').toString(),
+                  u.deposito,
+                  u.pasillo ?? '',
+                  u.estante ?? '',
+                  u.nivel ?? '',
+                  u.codigoQR ?? '',
+                  u.descripcion ?? '',
+                ]).toList(),
+                color: Colors.indigo,
               ),
             ],
           ),

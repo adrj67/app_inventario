@@ -3,6 +3,7 @@ import '../../../database/categoria_repository.dart';
 import '../../../models/categoria.dart';
 import '../../../widgets/search_field.dart';
 import 'categoria_form.dart';
+import '../../../widgets/export_button.dart';
 
 class CategoriasPage extends StatefulWidget {
   const CategoriasPage({super.key});
@@ -194,6 +195,25 @@ class _CategoriasPageState extends State<CategoriasPage> {
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              ExportButton(
+                titulo: 'Categorías',
+                headers: const ['ID', 'Nombre', 'Descripción', 'Categoría Padre', 'Estado'],
+                rows: _filtered.map((c) {
+                  final padre = _categorias.where((x) => x.id == c.categoriaPadreId).firstOrNull;
+                  return [
+                    (c.id ?? '').toString(),
+                    c.nombre,
+                    c.descripcion ?? '',
+                    padre?.nombre ?? '(raíz)',
+                    c.activa ? 'Activa' : 'Inactiva',
+                  ];
+                }).toList(),
+                color: Colors.purple,
               ),
             ],
           ),
