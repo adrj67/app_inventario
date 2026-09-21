@@ -8,6 +8,8 @@ import '../../../models/producto.dart';
 import '../../../models/movimiento.dart';
 import '../../../models/categoria.dart';
 import '../../../models/proveedor.dart';
+//import '../../../widgets/export_button.dart';
+import '../../../services/export_helper.dart';
 
 class ReporteDetallePage extends StatefulWidget {
   final String tipo;
@@ -200,6 +202,14 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
         backgroundColor: widget.color.shade700,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          // 🔥 Botón Exportar (solo si hay datos cargados)
+          if (!_isLoading && _items.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: _buildBotonExportar(),
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -512,5 +522,193 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
         );
       },
     );
+  }
+
+  // ==================== EXPORTACIÓN ====================
+
+  Widget _buildBotonExportar() {
+    return Tooltip(
+      message: 'Exportar a CSV o PDF',
+      child: OutlinedButton.icon(
+        onPressed: () => _exportarReporte(context),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.white,
+          side: const BorderSide(color: Colors.white70),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        icon: const Icon(Icons.file_download, size: 18),
+        label: const Text(
+          'Exportar',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
+  void _exportarReporte(BuildContext context) {
+    final data = _prepararDatosExportacion();
+    if (data == null) return;
+
+    ExportHelper.mostrarDialogoExportacion(
+      context: context,
+      titulo: widget.titulo,
+      headers: data['headers'] as List<String>,
+      rows: data['rows'] as List<List<String>>,
+    );
+  }
+
+  /// Prepara los headers y rows según el tipo de reporte
+  Map<String, dynamic>? _prepararDatosExportacion() {
+    switch (widget.tipo) {
+      case 'stock_bajo':
+      case 'agotados':
+        return _prepararDatosProductos();
+      case 'mas_movidos':
+        return _prepararDatosMasMovidos();
+      case 'por_categoria':
+      case 'por_proveedor':
+        return _prepararDatosAgrupados();
+      case 'historial':
+        return _prepararDatosHistorial();
+      default:
+        return null;
+    }
+  }
+
+  // ==================== PREPARAR DATOS POR TIPO ====================
+
+  Map<String, dynamic> _prepararDatosProductos() {
+    final headers = [
+      'ID',
+      'SKU',
+      'Nombre',
+      'Modelo',
+      'Stock Actual',
+      'Stock Mínimo',
+      'Reponer',
+      'Estado',
+    ];
+
+    final rows = _items.map((item) {
+      final p = item as Producto;
+      final reponer = p.stockMinimo - p.stockActual < 1
+          ? 1
+          : p.stockMinimo - p.stockActual + 1;
+      return [
+        (p.id ?? '').toString(),
+        p.sku,
+        p.nombre,
+        p.modelo ?? '',
+        p.stockActual.toString(),
+        p.stockMinimo.toString(),
+        reponer.toString(),
+        p.estaAgotado ? 'Agotado' : 'Stock Bajo',
+      ];
+    }).toList();
+
+    return {'headers': headers, 'rows': rows};
+  }
+
+  Map<String, dynamic> _prepararDatosMasMovidos() {
+    final headers = [
+      'Posición',
+      'SKU',
+      'Nombre',
+      'Cantidad Movimientos',
+      'Stock Actual',
+    ];
+
+    final rows = <List<String>>[];
+    for (int i = 0; i < _items.length; i++) {
+      final item = _items[i] as Map<String, dynamic>;
+      final p = item['producto'] as Producto;
+      final count = item['cantidad'] as int;
+      rows.add([
+        '${i + 1}',
+        p.sku,
+        p.nombre,
+        count.toString(),
+        p.stockActual.toString(),
+      ]);
+    }
+
+    return {'headers': headers, 'rows': rows};
+  }
+
+  Map<String, dynamic> _prepararDatosAgrupados() {
+    final esCategoria = widget.tipo == 'por_categoria';
+    final headers = [
+      esCategoria ? 'Categoría' : 'Proveedor',
+      'Producto',
+      'SKU',
+      'Stock Actual',
+      'Precio Compra',
+      'Valor Stock',
+    ];
+
+    final rows = <List<String>>[];
+    for (final item in _items) {
+      final map = item as Map<String, dynamic>;
+
+      // 🔥 Extraer el nombre según el tipo (evita el error de Object)
+      String nombreGrupo;
+      if (esCategoria) {
+        final cat = map['categoria'] as Categoria?;
+        nombreGrupo = cat?.nombre ?? 'Sin categoría';
+      } else {
+        final prov = map['proveedor'] as Proveedor?;
+        nombreGrupo = prov?.nombre ?? 'Sin proveedor';
+      }
+
+      final productos = map['productos'] as List<Producto>;
+
+      for (final p in productos) {
+        rows.add([
+          nombreGrupo,
+          p.nombre,
+          p.sku,
+          p.stockActual.toString(),
+          p.precioCompra.toStringAsFixed(2),
+          (p.stockActual * p.precioCompra).toStringAsFixed(2),
+        ]);
+      }
+    }
+
+    return {'headers': headers, 'rows': rows};
+  }
+
+  Map<String, dynamic> _prepararDatosHistorial() {
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+    final headers = [
+      'ID',
+      'Fecha',
+      'Tipo',
+      'Cantidad',
+      'Motivo',
+      'Precio Unit.',
+      'Total',
+      'Factura',
+      'Nota',
+    ];
+
+    final rows = _items.map((item) {
+      final m = item as Movimiento;
+      return [
+        (m.id ?? '').toString(),
+        dateFormat.format(m.fecha),
+        m.tipo,
+        m.cantidad.toString(),
+        m.motivo ?? '',
+        m.precioUnitario.toStringAsFixed(2),
+        m.total.toStringAsFixed(2),
+        m.numeroFactura ?? '',
+        m.nota ?? '',
+      ];
+    }).toList();
+
+    return {'headers': headers, 'rows': rows};
   }
 }
