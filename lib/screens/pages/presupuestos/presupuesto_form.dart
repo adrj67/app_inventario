@@ -8,6 +8,8 @@ import '../../../models/presupuesto.dart';
 import '../../../models/presupuesto_item.dart';
 import '../../../models/cliente.dart';
 import '../../../models/producto.dart';
+import '../../../database/configuracion_repository.dart';
+import '../../../services/presupuesto_pdf_service.dart';
 
 class PresupuestoForm extends StatefulWidget {
   final Presupuesto? presupuesto;
@@ -126,6 +128,31 @@ class _PresupuestoFormState extends State<PresupuestoForm> {
           onPressed: () => Navigator.pop(context, false),
         ),
         actions: [
+          // 🔥 Botón Generar PDF
+          if (!_cargandoDatos && _items.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Tooltip(
+                message: 'Generar PDF del presupuesto',
+                child: OutlinedButton.icon(
+                  onPressed: _generarPdf,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white70),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  icon: const Icon(Icons.picture_as_pdf, size: 18),
+                  label: const Text(
+                    'PDF',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ),
+          // Número del presupuesto
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Center(
@@ -743,6 +770,79 @@ class _PresupuestoFormState extends State<PresupuestoForm> {
 
   void _quitarProducto(int index) {
     setState(() => _items.removeAt(index));
+  }
+
+  Future<void> _generarPdf() async {
+    // Validación: debe estar guardado (tener ID)
+    if (widget.presupuesto?.id == null && _items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Guardá el presupuesto primero para generar el PDF'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (_items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Agregá al menos un producto'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Cargar la configuración de la empresa
+      final config = await ConfiguracionRepository().get();
+
+      // Buscar el cliente
+      final cliente = _clienteId != null
+          ? _clientes.where((c) => c.id == _clienteId).firstOrNull
+          : null;
+
+      // Construir el presupuesto temporal (con los valores actuales del form)
+      final presupuesto = Presupuesto(
+        id: widget.presupuesto?.id,
+        numero: _numero,
+        clienteId: _clienteId,
+        fecha: _fecha,
+        fechaVencimiento: _fechaVencimiento,
+        subtotal: _subtotal,
+        iva: _iva,
+        total: _total,
+        porcentajeIva: _porcentajeIva,
+        estado: _estado,
+        nota: _notaController.text.trim().isEmpty ? null : _notaController.text.trim(),
+        fechaCreacion: widget.presupuesto?.fechaCreacion ?? DateTime.now(),
+        fechaModificacion: DateTime.now(),
+      );
+
+      await PresupuestoPdfService.generarPdfPresupuesto(
+        presupuesto: presupuesto,
+        items: _items,
+        cliente: cliente,
+        config: config,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('PDF generado correctamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al generar PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _guardar() async {
