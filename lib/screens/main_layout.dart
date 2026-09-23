@@ -75,7 +75,7 @@ class _MainLayoutState extends State<MainLayout> {
           ),
         ],
       ),
-      drawer: MainDrawer( // 🔥 AHORA SÍ RECONOCE LA CLASE
+      drawer: MainDrawer(
         selectedIndex: _selectedIndex,
         onItemSelected: (index) {
           setState(() {

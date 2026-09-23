@@ -240,7 +240,20 @@ class DatabaseHelper {
         'fechaModificacion': now,
       });
 
-      // 🔥 Productos de ejemplo (SIN volver a declarar 'now')
+      await db.insert('proveedores', {
+        'nombre': 'Desconocido',
+        'cuit': '30-99999999-9',
+        'telefono': '+54 223 555-5432',
+        'email': 'desconocido@phmayorista.com',
+        'direccion': 'Calle Falsa 123, Mar del Plata',
+        'contacto': 'Desconocido',
+        'nota': 'Proveedor de electrodomésticos',
+        'activo': 1,
+        'fechaCreacion': now,
+        'fechaModificacion': now,
+      });
+
+      // 🔥 Productos de ejemplo 
       final productosEjemplo = [
         {
           'sku': 'CEL-SAM-A17-001',
@@ -400,9 +413,9 @@ class DatabaseHelper {
       final ubicacionesEjemplo = [
         {'deposito': 'Depósito Central', 'pasillo': 'A', 'estante': '1', 'nivel': '1', 'descripcion': 'Productos electrónicos'},
         {'deposito': 'Depósito Central', 'pasillo': 'A', 'estante': '2', 'nivel': '1', 'descripcion': 'Celulares'},
-        {'deposito': 'Depósito Central', 'pasillo': 'B', 'estante': '1', 'nivel': '1', 'descripcion': 'Electrodomésticos'},
+        {'deposito': 'Depósito Sur', 'pasillo': 'B', 'estante': '1', 'nivel': '1', 'descripcion': 'Electrodomésticos'},
         {'deposito': 'Depósito Norte', 'pasillo': 'A', 'estante': '1', 'nivel': '1', 'descripcion': 'Muebles grandes'},
-        {'deposito': 'Depósito Norte', 'pasillo': 'A', 'estante': '1', 'nivel': '2', 'descripcion': 'Colchones'},
+        {'deposito': 'Depósito Norte', 'pasillo': 'B', 'estante': '1', 'nivel': '2', 'descripcion': 'Colchones'},
       ];
 
       for (final ubic in ubicacionesEjemplo) {
@@ -418,11 +431,11 @@ class DatabaseHelper {
       final clientesEjemplo = [
         {
           'nombre': 'Consumidor Final',
-          'cuit': '20-12345678-9',
-          'telefono': '+54 11 5555-1234',
+          'cuit': '20-99999999-9',
+          'telefono': '+54 223 555-1234',
           'email': 'consumidor.final@email.com',
-          'direccion': 'Av. Rivadavia 1234',
-          'localidad': 'CABA',
+          'direccion': 'Av. Jara 1234',
+          'localidad': 'Mar del Plata',
           'nota': 'Cliente frecuente',
         },
         {

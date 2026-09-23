@@ -34,3 +34,10 @@ lib/
     ├── main_drawer.dart
     ├── search_field.dart      # NUEVO: Campo de búsqueda reutilizable
     └── confirmation_dialog.dart # NUEVO: Diálogo de confirmación
+
+=======================================================================
+El ejecutable queda en:
+
+text
+build\windows\x64\runner\Release\app_inventario_flutter.exe
+Ese .exe se puede copiar a cualquier PC con Windows y funciona (aunque necesita los archivos .dll de la misma carpeta Release).
