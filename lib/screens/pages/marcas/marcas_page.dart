@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../database/marca_repository.dart';
+import '../../../database/producto_repository.dart';
 import '../../../models/marca.dart';
+import '../../../models/producto.dart';
 import '../../../widgets/search_field.dart';
-import 'marca_form.dart';
 import '../../../widgets/export_button.dart';
+import 'marca_form.dart';
+import '../productos/producto_form.dart';
 
 class MarcasPage extends StatefulWidget {
   const MarcasPage({super.key});
@@ -14,10 +18,12 @@ class MarcasPage extends StatefulWidget {
 
 class _MarcasPageState extends State<MarcasPage> {
   final MarcaRepository _repository = MarcaRepository();
+  final ProductoRepository _productoRepository = ProductoRepository();
   final TextEditingController _searchController = TextEditingController();
 
   List<Marca> _marcas = [];
   List<Marca> _filtered = [];
+  Map<int, List<Producto>> _productosPorMarca = {};
   bool _isLoading = true;
 
   @override
@@ -35,10 +41,21 @@ class _MarcasPageState extends State<MarcasPage> {
   Future<void> _loadMarcas() async {
     setState(() => _isLoading = true);
     try {
-      final lista = await _repository.getAll();
+      final marcas = await _repository.getAll();
+      final productos = await _productoRepository.getAll(soloActivos: false);
+
+      // Agrupar productos por marcaId
+      final Map<int, List<Producto>> agrupados = {};
+      for (final p in productos) {
+        if (p.marcaId != null) {
+          agrupados.putIfAbsent(p.marcaId!, () => []).add(p);
+        }
+      }
+
       setState(() {
-        _marcas = lista;
-        _filtered = lista;
+        _marcas = marcas;
+        _filtered = marcas;
+        _productosPorMarca = agrupados;
         _isLoading = false;
       });
     } catch (e) {
@@ -79,7 +96,36 @@ class _MarcasPageState extends State<MarcasPage> {
     }
   }
 
+  Future<void> _editarProducto(Producto producto) async {
+    final resultado = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => ProductoForm(producto: producto),
+      ),
+    );
+    if (resultado == true) {
+      await _loadMarcas();
+    }
+  }
+
   Future<void> _confirmarEliminar(Marca marca) async {
+    final productosAsociados = _productosPorMarca[marca.id] ?? [];
+
+    if (productosAsociados.isNotEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No se puede eliminar "${marca.nombre}": tiene ${productosAsociados.length} productos asociados',
+          ),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -173,7 +219,7 @@ class _MarcasPageState extends State<MarcasPage> {
                     ),
                   ),
                   Text(
-                    '${_filtered.length} marcas',
+                    '${_filtered.length} marcas · ${_productosPorMarca.values.fold(0, (sum, list) => sum + list.length)} productos asociados',
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
@@ -184,30 +230,34 @@ class _MarcasPageState extends State<MarcasPage> {
             children: [
               ExportButton(
                 titulo: 'Marcas',
-                headers: const ['ID', 'Nombre', 'Descripción', 'Estado'],
+                headers: const [
+                  'ID', 'Nombre', 'Descripción', 'Productos Asociados', 'Estado',
+                ],
                 rows: _filtered.map((m) => [
                   (m.id ?? '').toString(),
                   m.nombre,
                   m.descripcion ?? '',
+                  (_productosPorMarca[m.id]?.length ?? 0).toString(),
                   m.activa ? 'Activa' : 'Inactiva',
                 ]).toList(),
                 color: Colors.teal,
               ),
-            ],
-          ),
-          ElevatedButton.icon(
-            onPressed: () => _abrirFormulario(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal.shade700,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: () => _abrirFormulario(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal.shade700,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                icon: const Icon(Icons.add),
+                label: const Text('Nueva Marca',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
               ),
-            ),
-            icon: const Icon(Icons.add),
-            label: const Text('Nueva Marca',
-                style: TextStyle(fontWeight: FontWeight.w600)),
+            ],
           ),
         ],
       ),
@@ -242,54 +292,285 @@ class _MarcasPageState extends State<MarcasPage> {
       itemCount: _filtered.length,
       itemBuilder: (context, index) {
         final marca = _filtered[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.teal.shade50,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Center(
-                child: Text(
-                  marca.nombre.substring(0, 2).toUpperCase(),
-                  style: TextStyle(
-                    color: Colors.teal.shade700,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ),
-            title: Text(
-              marca.nombre,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            subtitle: marca.descripcion != null ? Text(marca.descripcion!) : null,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () => _abrirFormulario(marca: marca),
-                  tooltip: 'Editar',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => _confirmarEliminar(marca),
-                  tooltip: 'Eliminar',
-                ),
-              ],
-            ),
-            onTap: () => _abrirFormulario(marca: marca),
-          ),
+        final productos = _productosPorMarca[marca.id] ?? [];
+        return _MarcaCard(
+          marca: marca,
+          productos: productos,
+          onEdit: () => _abrirFormulario(marca: marca),
+          onDelete: () => _confirmarEliminar(marca),
+          onProductoTap: _editarProducto,
         );
       },
+    );
+  }
+}
+
+// ==================== WIDGET CARD ====================
+
+class _MarcaCard extends StatelessWidget {
+  final Marca marca;
+  final List<Producto> productos;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final Function(Producto) onProductoTap;
+
+  const _MarcaCard({
+    required this.marca,
+    required this.productos,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onProductoTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final currencyFormat = NumberFormat.currency(
+      locale: 'es_AR',
+      symbol: '\$',
+      decimalDigits: 0,
+    );
+
+    final valorTotal = productos.fold<double>(
+      0,
+      (sum, p) => sum + (p.stockActual * p.precioCompra),
+    );
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ExpansionTile(
+        shape: const Border(),
+        leading: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.teal.shade50,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Text(
+              marca.nombre.substring(0, 2).toUpperCase(),
+              style: TextStyle(
+                color: Colors.teal.shade700,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
+        title: Text(
+          marca.nombre,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (marca.descripcion != null)
+              Text(
+                marca.descripcion!,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: productos.isEmpty ? Colors.grey.shade100 : Colors.teal.shade50,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '${productos.length} producto${productos.length != 1 ? "s" : ""}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: productos.isEmpty ? Colors.grey.shade600 : Colors.teal.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (valorTotal > 0) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    'Valor: ${currencyFormat.format(valorTotal)}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+              onPressed: onEdit,
+              tooltip: 'Editar marca',
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+              onPressed: onDelete,
+              tooltip: 'Eliminar marca',
+            ),
+          ],
+        ),
+        children: [
+          if (productos.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Icon(Icons.inventory_2_outlined,
+                      size: 40, color: Colors.grey.shade300),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No hay productos con esta marca',
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            // Encabezado de la tabla
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.grey.shade100,
+              child: Row(
+                children: [
+                  Expanded(flex: 3, child: _buildHeaderText('PRODUCTO')),
+                  Expanded(
+                    flex: 1,
+                    child: _buildHeaderText('STOCK', center: true),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: _buildHeaderText('PRECIO VENTA', right: true),
+                  ),
+                  const SizedBox(width: 40),
+                ],
+              ),
+            ),
+            // Lista de productos
+            ...productos.map((p) => _buildItemProducto(context, p)),
+            // Footer con acción
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _verTodosProductos(context),
+                    icon: const Icon(Icons.arrow_forward, size: 16),
+                    label: const Text('Ver todos en Productos'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderText(String text, {bool center = false, bool right = false}) {
+    return Text(
+      text,
+      textAlign: center ? TextAlign.center : (right ? TextAlign.right : TextAlign.left),
+      style: TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
+        color: Colors.grey.shade700,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
+  Widget _buildItemProducto(BuildContext context, Producto p) {
+    final currencyFormat = NumberFormat.currency(
+      locale: 'es_AR',
+      symbol: '\$',
+      decimalDigits: 0,
+    );
+
+    return InkWell(
+      onTap: () => onProductoTap(p),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: Colors.grey.shade200),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    p.nombre,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    'SKU: ${p.sku}',
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              flex: 1,
+              child: Text(
+                p.stockActual.toString(),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: p.estaAgotado
+                      ? Colors.red.shade700
+                      : (p.tieneStockBajo ? Colors.orange.shade700 : Colors.grey.shade800),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(
+                currencyFormat.format(p.precioVenta),
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Colors.green,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: Colors.grey.shade400,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _verTodosProductos(BuildContext context) {
+    // Por ahora mostramos un SnackBar informativo
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Andá a "Productos" y filtrá por "${marca.nombre}"'),
+        backgroundColor: Colors.teal.shade700,
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 }
