@@ -5,6 +5,8 @@ import '../../../models/producto.dart';
 import '../../../widgets/search_field.dart';
 import 'producto_form.dart';
 import '../../../widgets/export_button.dart';
+import '../../../database/marca_repository.dart';
+import '../../../models/marca.dart';
 
 class ProductosPage extends StatefulWidget {
   const ProductosPage({super.key});
@@ -28,9 +30,14 @@ class _ProductosPageState extends State<ProductosPage> {
   int _totalAgotados = 0;
   double _valorInventario = 0;
 
+  final MarcaRepository _marcaRepository = MarcaRepository();
+  List<Marca> _marcas = [];
+  int? _filtroMarcaId;
+
   @override
   void initState() {
     super.initState();
+    _cargarMarcas(); 
     _loadProductos();
   }
 
@@ -78,6 +85,11 @@ class _ProductosPageState extends State<ProductosPage> {
       resultado = resultado.where((p) => p.tieneStockBajo).toList();
     } else if (_filtroEstado == 'agotados') {
       resultado = resultado.where((p) => p.estaAgotado).toList();
+    }
+
+    // 🔥 NUEVO: Filtro por marca
+    if (_filtroMarcaId != null) {
+      resultado = resultado.where((p) => p.marcaId == _filtroMarcaId).toList();
     }
 
     // Filtro por búsqueda
@@ -143,6 +155,15 @@ class _ProductosPageState extends State<ProductosPage> {
     if (confirmar == true) {
       await _repository.delete(producto.id!);
       await _loadProductos();
+    }
+  }
+
+  Future<void> _cargarMarcas() async {
+    try {
+      final marcas = await _marcaRepository.getAll();
+      setState(() => _marcas = marcas);
+    } catch (e) {
+      debugPrint('Error cargando marcas: $e');
     }
   }
 
@@ -376,15 +397,111 @@ class _ProductosPageState extends State<ProductosPage> {
   }
 
   Widget _buildFiltros() {
+    final hayFiltrosActivos = _filtroEstado != 'todos' || _filtroMarcaId != null;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Row(
         children: [
+          // Chips de estado
           _buildFilterChip('Todos', 'todos', Icons.list),
           const SizedBox(width: 8),
           _buildFilterChip('Stock Bajo', 'stock_bajo', Icons.warning_amber),
           const SizedBox(width: 8),
           _buildFilterChip('Agotados', 'agotados', Icons.remove_shopping_cart),
+          const SizedBox(width: 16),
+
+          // Separador visual
+          Container(
+            width: 1,
+            height: 24,
+            color: Colors.grey.shade300,
+          ),
+          const SizedBox(width: 16),
+
+          // 🔥 Dropdown de Marca
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: _filtroMarcaId != null
+                    ? Colors.teal.shade700
+                    : Colors.grey.shade300,
+                width: _filtroMarcaId != null ? 2 : 1,
+              ),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<int?>(
+                value: _filtroMarcaId,
+                hint: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.local_offer, size: 16, color: Colors.grey.shade600),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Todas las marcas',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                icon: Icon(
+                  Icons.arrow_drop_down,
+                  color: _filtroMarcaId != null
+                      ? Colors.teal.shade700
+                      : Colors.grey.shade600,
+                ),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: _filtroMarcaId != null
+                      ? Colors.teal.shade700
+                      : Colors.grey.shade700,
+                  fontWeight: _filtroMarcaId != null
+                      ? FontWeight.w600
+                      : FontWeight.w500,
+                ),
+                items: [
+                  const DropdownMenuItem<int?>(
+                    value: null,
+                    child: Text('Todas las marcas'),
+                  ),
+                  ..._marcas.map((m) => DropdownMenuItem<int?>(
+                        value: m.id,
+                        child: Text(m.nombre),
+                      )),
+                ],
+                onChanged: (v) {
+                  setState(() => _filtroMarcaId = v);
+                  _aplicarFiltros();
+                },
+              ),
+            ),
+          ),
+
+          const Spacer(),
+
+          // 🔥 Botón limpiar filtros (solo si hay filtros activos)
+          if (hayFiltrosActivos)
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _filtroEstado = 'todos';
+                  _filtroMarcaId = null;
+                  _searchController.clear();
+                });
+                _aplicarFiltros();
+              },
+              icon: const Icon(Icons.clear, size: 16),
+              label: const Text('Limpiar filtros'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red.shade700,
+              ),
+            ),
         ],
       ),
     );
