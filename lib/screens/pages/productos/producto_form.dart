@@ -5,6 +5,12 @@ import '../../../database/producto_repository.dart';
 import '../../../database/proveedor_repository.dart';
 import '../../../models/producto.dart';
 import '../../../models/proveedor.dart';
+import '../../../database/categoria_repository.dart';
+import '../../../database/marca_repository.dart';
+import '../../../database/ubicacion_repository.dart';
+import '../../../models/categoria.dart';
+import '../../../models/marca.dart';
+import '../../../models/ubicacion.dart';
 
 class ProductoForm extends StatefulWidget {
   final Producto? producto;
@@ -19,6 +25,9 @@ class _ProductoFormState extends State<ProductoForm> {
   final _formKey = GlobalKey<FormState>();
   final ProductoRepository _repository = ProductoRepository();
   final ProveedorRepository _proveedorRepository = ProveedorRepository();
+  final CategoriaRepository _categoriaRepository = CategoriaRepository();
+  final MarcaRepository _marcaRepository = MarcaRepository();
+  final UbicacionRepository _ubicacionRepository = UbicacionRepository();
 
   // ==================== CONTROLLERS ====================
   late final TextEditingController _skuController;
@@ -46,10 +55,17 @@ class _ProductoFormState extends State<ProductoForm> {
   //DateTime? _fechaFinGarantia;
   int? _proveedorId;
   bool _guardando = false;
+  int? _categoriaId;
+  int? _marcaId;
+  int? _ubicacionId;
 
   // Lista de proveedores disponibles
   List<Proveedor> _proveedores = [];
   bool _cargandoProveedores = true;
+  List<Categoria> _categorias = [];
+  List<Marca> _marcas = [];
+  List<Ubicacion> _ubicaciones = [];
+  bool _cargandoRelaciones = true;
 
   final List<String> _unidades = [
     'Unidad',
@@ -95,6 +111,12 @@ class _ProductoFormState extends State<ProductoForm> {
 
     _cargarProveedores();
 
+    _categoriaId = p?.categoriaId;
+    _marcaId = p?.marcaId;
+    _ubicacionId = p?.ubicacionId;
+
+    _cargarRelaciones();
+
     // Listener para recalcular precio sugerido
     _precioCompraController.addListener(_recalcularPrecioSugerido);
   }
@@ -118,6 +140,24 @@ class _ProductoFormState extends State<ProductoForm> {
     _mesesGarantiaController.dispose();
     _notaController.dispose();
     super.dispose();
+  }
+
+  Future<void> _cargarRelaciones() async {
+    try {
+      final categorias = await _categoriaRepository.getAll();
+      final marcas = await _marcaRepository.getAll();
+      final ubicaciones = await _ubicacionRepository.getAll();
+
+      setState(() {
+        _categorias = categorias;
+        _marcas = marcas;
+        _ubicaciones = ubicaciones;
+        _cargandoRelaciones = false;
+      });
+    } catch (e) {
+      debugPrint('Error cargando relaciones: $e');
+      setState(() => _cargandoRelaciones = false);
+    }
   }
 
   Future<void> _cargarProveedores() async {
@@ -248,6 +288,77 @@ class _ProductoFormState extends State<ProductoForm> {
       titulo: 'Clasificación y Proveedor',
       icono: Icons.category,
       children: [
+        // Primera fila: Categoría + Marca
+        Row(
+          children: [
+            Expanded(
+              child: _cargandoRelaciones
+                  ? const Center(child: CircularProgressIndicator())
+                  : DropdownButtonFormField<int>(
+                      initialValue: _categoriaId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Categoría',
+                        prefixIcon: Icon(Icons.category, color: Colors.blue.shade700),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Sin categoría'),
+                        ),
+                        ..._categorias.map((c) => DropdownMenuItem<int>(
+                              value: c.id,
+                              child: Text(
+                                _nombreCategoriaCompleto(c),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )),
+                      ],
+                      onChanged: (v) => setState(() => _categoriaId = v),
+                    ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _cargandoRelaciones
+                  ? const Center(child: CircularProgressIndicator())
+                  : DropdownButtonFormField<int>(
+                      initialValue: _marcaId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Marca',
+                        prefixIcon: Icon(Icons.local_offer, color: Colors.blue.shade700),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Sin marca'),
+                        ),
+                        ..._marcas.map((m) => DropdownMenuItem<int>(
+                              value: m.id,
+                              child: Text(
+                                m.nombre,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )),
+                      ],
+                      onChanged: (v) => setState(() => _marcaId = v),
+                    ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Segunda fila: Proveedor + N° Factura
         Row(
           children: [
             Expanded(
@@ -255,6 +366,7 @@ class _ProductoFormState extends State<ProductoForm> {
                   ? const Center(child: CircularProgressIndicator())
                   : DropdownButtonFormField<int>(
                       initialValue: _proveedorId,
+                      isExpanded: true,
                       decoration: InputDecoration(
                         labelText: 'Proveedor',
                         prefixIcon: Icon(Icons.business, color: Colors.blue.shade700),
@@ -271,7 +383,10 @@ class _ProductoFormState extends State<ProductoForm> {
                         ),
                         ..._proveedores.map((p) => DropdownMenuItem<int>(
                               value: p.id,
-                              child: Text(p.nombre),
+                              child: Text(
+                                p.nombre,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             )),
                       ],
                       onChanged: (v) => setState(() => _proveedorId = v),
@@ -287,6 +402,38 @@ class _ProductoFormState extends State<ProductoForm> {
             ),
           ],
         ),
+        const SizedBox(height: 16),
+
+        // Tercera fila: Ubicación
+        _cargandoRelaciones
+            ? const Center(child: CircularProgressIndicator())
+            : DropdownButtonFormField<int>(
+                initialValue: _ubicacionId,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  labelText: 'Ubicación',
+                  prefixIcon: Icon(Icons.location_on, color: Colors.blue.shade700),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
+                items: [
+                  const DropdownMenuItem<int>(
+                    value: null,
+                    child: Text('Sin ubicación'),
+                  ),
+                  ..._ubicaciones.map((u) => DropdownMenuItem<int>(
+                        value: u.id,
+                        child: Text(
+                          u.nombreCompleto,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      )),
+                ],
+                onChanged: (v) => setState(() => _ubicacionId = v),
+              ),
       ],
     );
   }
@@ -762,6 +909,14 @@ class _ProductoFormState extends State<ProductoForm> {
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // 🔥 DEBUG TEMPORAL
+    debugPrint('=== VALORES ANTES DE GUARDAR ===');
+    debugPrint('categoriaId: $_categoriaId');
+    debugPrint('marcaId: $_marcaId');
+    debugPrint('ubicacionId: $_ubicacionId');
+    debugPrint('proveedorId: $_proveedorId');
+    debugPrint('===============================');
+
     setState(() => _guardando = true);
 
     try {
@@ -782,6 +937,9 @@ class _ProductoFormState extends State<ProductoForm> {
         nombre: _nombreController.text.trim(),
         descripcion: _textoONull(_descripcionController.text),
         modelo: _textoONull(_modeloController.text),
+        categoriaId: _categoriaId,      // 🔥 NUEVO
+        marcaId: _marcaId,               // 🔥 NUEVO
+        ubicacionId: _ubicacionId,       // 🔥 NUEVO
         proveedorId: _proveedorId,
         stockActual: int.tryParse(_stockActualController.text) ?? 0,
         stockMinimo: int.tryParse(_stockMinimoController.text) ?? 0,
@@ -832,5 +990,19 @@ class _ProductoFormState extends State<ProductoForm> {
   String? _textoONull(String texto) {
     final t = texto.trim();
     return t.isEmpty ? null : t;
+  }
+
+    /// Devuelve el nombre de la categoría con su padre (si lo tiene)
+  String _nombreCategoriaCompleto(Categoria cat) {
+    if (cat.categoriaPadreId == null) {
+      return cat.nombre;
+    }
+    final padre = _categorias
+        .where((c) => c.id == cat.categoriaPadreId)
+        .firstOrNull;
+    if (padre != null) {
+      return '${padre.nombre} > ${cat.nombre}';
+    }
+    return cat.nombre;
   }
 }
