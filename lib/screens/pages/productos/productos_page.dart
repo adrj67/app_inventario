@@ -7,6 +7,8 @@ import 'producto_form.dart';
 import '../../../widgets/export_button.dart';
 import '../../../database/marca_repository.dart';
 import '../../../models/marca.dart';
+import '../../../database/categoria_repository.dart';
+import '../../../models/categoria.dart';
 
 class ProductosPage extends StatefulWidget {
   const ProductosPage({super.key});
@@ -29,15 +31,20 @@ class _ProductosPageState extends State<ProductosPage> {
   int _totalStockBajo = 0;
   int _totalAgotados = 0;
   double _valorInventario = 0;
-
+  // Filtro Marcas
   final MarcaRepository _marcaRepository = MarcaRepository();
   List<Marca> _marcas = [];
   int? _filtroMarcaId;
+  // Filtro Categorias
+  final CategoriaRepository _categoriaRepository = CategoriaRepository();
+  List<Categoria> _categorias = [];
+  int? _filtroCategoriaId;
 
   @override
   void initState() {
     super.initState();
-    _cargarMarcas(); 
+    _cargarMarcas();
+    _cargarCategorias(); 
     _loadProductos();
   }
 
@@ -87,9 +94,14 @@ class _ProductosPageState extends State<ProductosPage> {
       resultado = resultado.where((p) => p.estaAgotado).toList();
     }
 
-    // 🔥 NUEVO: Filtro por marca
+    // Filtro por marca
     if (_filtroMarcaId != null) {
       resultado = resultado.where((p) => p.marcaId == _filtroMarcaId).toList();
+    }
+
+    // 🔥 NUEVO: Filtro por categoría
+    if (_filtroCategoriaId != null) {
+      resultado = resultado.where((p) => p.categoriaId == _filtroCategoriaId).toList();
     }
 
     // Filtro por búsqueda
@@ -165,6 +177,29 @@ class _ProductosPageState extends State<ProductosPage> {
     } catch (e) {
       debugPrint('Error cargando marcas: $e');
     }
+  }
+
+  Future<void> _cargarCategorias() async {
+    try {
+      final categorias = await _categoriaRepository.getAll();
+      setState(() => _categorias = categorias);
+    } catch (e) {
+      debugPrint('Error cargando categorías: $e');
+    }
+  }
+
+  /// Devuelve el nombre de la categoría con su padre (si lo tiene)
+  String _nombreCategoriaCompleto(Categoria cat) {
+    if (cat.categoriaPadreId == null) {
+      return cat.nombre;
+    }
+    final padre = _categorias
+        .where((c) => c.id == cat.categoriaPadreId)
+        .firstOrNull;
+    if (padre != null) {
+      return '${padre.nombre} > ${cat.nombre}';
+    }
+    return cat.nombre;
   }
 
   @override
@@ -396,8 +431,10 @@ class _ProductosPageState extends State<ProductosPage> {
     );
   }
 
-  Widget _buildFiltros() {
-    final hayFiltrosActivos = _filtroEstado != 'todos' || _filtroMarcaId != null;
+    Widget _buildFiltros() {
+    final hayFiltrosActivos = _filtroEstado != 'todos' ||
+        _filtroMarcaId != null ||
+        _filtroCategoriaId != null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -419,79 +456,27 @@ class _ProductosPageState extends State<ProductosPage> {
           ),
           const SizedBox(width: 16),
 
-          // 🔥 Dropdown de Marca
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: _filtroMarcaId != null
-                    ? Colors.teal.shade700
-                    : Colors.grey.shade300,
-                width: _filtroMarcaId != null ? 2 : 1,
-              ),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int?>(
-                value: _filtroMarcaId,
-                hint: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.local_offer, size: 16, color: Colors.grey.shade600),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Todas las marcas',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                icon: Icon(
-                  Icons.arrow_drop_down,
-                  color: _filtroMarcaId != null
-                      ? Colors.teal.shade700
-                      : Colors.grey.shade600,
-                ),
-                style: TextStyle(
-                  fontSize: 13,
-                  color: _filtroMarcaId != null
-                      ? Colors.teal.shade700
-                      : Colors.grey.shade700,
-                  fontWeight: _filtroMarcaId != null
-                      ? FontWeight.w600
-                      : FontWeight.w500,
-                ),
-                items: [
-                  const DropdownMenuItem<int?>(
-                    value: null,
-                    child: Text('Todas las marcas'),
-                  ),
-                  ..._marcas.map((m) => DropdownMenuItem<int?>(
-                        value: m.id,
-                        child: Text(m.nombre),
-                      )),
-                ],
-                onChanged: (v) {
-                  setState(() => _filtroMarcaId = v);
-                  _aplicarFiltros();
-                },
-              ),
-            ),
+          // 🔥 Dropdown de Categoría
+          Flexible(
+            child: _buildDropdownCategoria(),
+          ),
+          const SizedBox(width: 12),
+
+          // Dropdown de Marca
+          Flexible(
+            child: _buildDropdownMarca(),
           ),
 
           const Spacer(),
 
-          // 🔥 Botón limpiar filtros (solo si hay filtros activos)
+          // Botón limpiar filtros (solo si hay filtros activos)
           if (hayFiltrosActivos)
             TextButton.icon(
               onPressed: () {
                 setState(() {
                   _filtroEstado = 'todos';
                   _filtroMarcaId = null;
+                  _filtroCategoriaId = null;
                   _searchController.clear();
                 });
                 _aplicarFiltros();
@@ -503,6 +488,140 @@ class _ProductosPageState extends State<ProductosPage> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  // 🔥 Dropdown de Categoría
+  Widget _buildDropdownCategoria() {
+    final seleccionada = _filtroCategoriaId != null;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: seleccionada ? Colors.purple.shade700 : Colors.grey.shade300,
+          width: seleccionada ? 2 : 1,
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int?>(
+          value: _filtroCategoriaId,
+          isExpanded: true,
+          hint: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.category, size: 16, color: Colors.grey.shade600),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  'Todas las categorías',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          icon: Icon(
+            Icons.arrow_drop_down,
+            color: seleccionada ? Colors.purple.shade700 : Colors.grey.shade600,
+          ),
+          style: TextStyle(
+            fontSize: 13,
+            color: seleccionada ? Colors.purple.shade700 : Colors.grey.shade700,
+            fontWeight: seleccionada ? FontWeight.w600 : FontWeight.w500,
+          ),
+          items: [
+            const DropdownMenuItem<int?>(
+              value: null,
+              child: Text('Todas las categorías'),
+            ),
+            ..._categorias.map((c) => DropdownMenuItem<int?>(
+                  value: c.id,
+                  child: Text(
+                    _nombreCategoriaCompleto(c),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                )),
+          ],
+          onChanged: (v) {
+            setState(() => _filtroCategoriaId = v);
+            _aplicarFiltros();
+          },
+        ),
+      ),
+    );
+  }
+
+  // 🔥 Dropdown de Marca
+  Widget _buildDropdownMarca() {
+    final seleccionada = _filtroMarcaId != null;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: seleccionada ? Colors.teal.shade700 : Colors.grey.shade300,
+          width: seleccionada ? 2 : 1,
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int?>(
+          value: _filtroMarcaId,
+          isExpanded: true,
+          hint: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.local_offer, size: 16, color: Colors.grey.shade600),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  'Todas las marcas',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          icon: Icon(
+            Icons.arrow_drop_down,
+            color: seleccionada ? Colors.teal.shade700 : Colors.grey.shade600,
+          ),
+          style: TextStyle(
+            fontSize: 13,
+            color: seleccionada ? Colors.teal.shade700 : Colors.grey.shade700,
+            fontWeight: seleccionada ? FontWeight.w600 : FontWeight.w500,
+          ),
+          items: [
+            const DropdownMenuItem<int?>(
+              value: null,
+              child: Text('Todas las marcas'),
+            ),
+            ..._marcas.map((m) => DropdownMenuItem<int?>(
+                  value: m.id,
+                  child: Text(
+                    m.nombre,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                )),
+          ],
+          onChanged: (v) {
+            setState(() => _filtroMarcaId = v);
+            _aplicarFiltros();
+          },
+        ),
       ),
     );
   }
