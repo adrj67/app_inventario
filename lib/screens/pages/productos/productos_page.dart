@@ -9,6 +9,8 @@ import '../../../database/marca_repository.dart';
 import '../../../models/marca.dart';
 import '../../../database/categoria_repository.dart';
 import '../../../models/categoria.dart';
+import '../../../database/ubicacion_repository.dart';
+import '../../../models/ubicacion.dart';
 
 class ProductosPage extends StatefulWidget {
   const ProductosPage({super.key});
@@ -39,12 +41,17 @@ class _ProductosPageState extends State<ProductosPage> {
   final CategoriaRepository _categoriaRepository = CategoriaRepository();
   List<Categoria> _categorias = [];
   int? _filtroCategoriaId;
+  // Filtro por ubicación
+  final UbicacionRepository _ubicacionRepository = UbicacionRepository();
+  List<Ubicacion> _ubicaciones = [];
+  int? _filtroUbicacionId;
 
   @override
   void initState() {
     super.initState();
     _cargarMarcas();
-    _cargarCategorias(); 
+    _cargarCategorias();
+    _cargarUbicaciones(); 
     _loadProductos();
   }
 
@@ -99,9 +106,14 @@ class _ProductosPageState extends State<ProductosPage> {
       resultado = resultado.where((p) => p.marcaId == _filtroMarcaId).toList();
     }
 
-    // 🔥 NUEVO: Filtro por categoría
+    // Filtro por categoría
     if (_filtroCategoriaId != null) {
       resultado = resultado.where((p) => p.categoriaId == _filtroCategoriaId).toList();
+    }
+
+    // 🔥 NUEVO: Filtro por ubicación
+    if (_filtroUbicacionId != null) {
+      resultado = resultado.where((p) => p.ubicacionId == _filtroUbicacionId).toList();
     }
 
     // Filtro por búsqueda
@@ -185,6 +197,15 @@ class _ProductosPageState extends State<ProductosPage> {
       setState(() => _categorias = categorias);
     } catch (e) {
       debugPrint('Error cargando categorías: $e');
+    }
+  }
+
+  Future<void> _cargarUbicaciones() async {
+    try {
+      final ubicaciones = await _ubicacionRepository.getAll();
+      setState(() => _ubicaciones = ubicaciones);
+    } catch (e) {
+      debugPrint('Error cargando ubicaciones: $e');
     }
   }
 
@@ -278,22 +299,39 @@ class _ProductosPageState extends State<ProductosPage> {
               ExportButton(
                 titulo: 'Productos',
                 headers: const [
-                  'ID', 'SKU', 'Nombre', 'Modelo', 'Stock', 'Stock Mín.',
-                  'Unidad', 'Precio Compra', 'Precio Venta', 'Estado',
+                  'ID',
+                  'SKU',
+                  'Nombre',
+                  'Modelo',
+                  'Marca',
+                  'Categoría',
+                  'Depósito',
+                  'Stock',
+                  'Precio Compra',
+                  'Estado',
                 ],
-                rows: _filtered.map((p) => [
-                  (p.id ?? '').toString(),
-                  p.sku,
-                  p.nombre,
-                  p.modelo ?? '',
-                  p.stockActual.toString(),
-                  p.stockMinimo.toString(),
-                  p.unidadMedida,
-                  p.precioCompra.toStringAsFixed(2),
-                  p.precioVenta.toStringAsFixed(2),
-                  p.estaAgotado ? 'Agotado' : (p.tieneStockBajo ? 'Stock Bajo' : 'En Stock'),
-                ]).toList(),
+                rows: _filtered.map((p) {
+                  final marca = _marcas.where((m) => m.id == p.marcaId).firstOrNull;
+                  final categoria = _categorias.where((c) => c.id == p.categoriaId).firstOrNull;
+                  final ubicacion = _ubicaciones.where((u) => u.id == p.ubicacionId).firstOrNull;
+
+                  return [
+                    (p.id ?? '').toString(),
+                    p.sku,
+                    p.nombre,
+                    p.modelo ?? '',
+                    marca?.nombre ?? '',
+                    categoria != null ? _nombreCategoriaCompleto(categoria) : '',
+                    ubicacion?.nombreCompleto ?? '',
+                    p.stockActual.toString(),
+                    p.precioCompra.toStringAsFixed(2),
+                    p.estaAgotado
+                        ? 'Agotado'
+                        : (p.tieneStockBajo ? 'Stock Bajo' : 'En Stock'),
+                  ];
+                }).toList(),
                 color: Colors.blue,
+                leyendaFiltros: _construirLeyendaFiltros(),  // 🔥 NUEVO
               ),
             ],
           ),
@@ -431,62 +469,68 @@ class _ProductosPageState extends State<ProductosPage> {
     );
   }
 
-    Widget _buildFiltros() {
+  Widget _buildFiltros() {
     final hayFiltrosActivos = _filtroEstado != 'todos' ||
         _filtroMarcaId != null ||
-        _filtroCategoriaId != null;
+        _filtroCategoriaId != null ||
+        _filtroUbicacionId != null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Chips de estado
-          _buildFilterChip('Todos', 'todos', Icons.list),
-          const SizedBox(width: 8),
-          _buildFilterChip('Stock Bajo', 'stock_bajo', Icons.warning_amber),
-          const SizedBox(width: 8),
-          _buildFilterChip('Agotados', 'agotados', Icons.remove_shopping_cart),
-          const SizedBox(width: 16),
+          // ==================== FILA 1: ESTADOS + LIMPIAR ====================
+          Row(
+            children: [
+              _buildFilterChip('Todos', 'todos', Icons.list),
+              const SizedBox(width: 8),
+              _buildFilterChip('Stock Bajo', 'stock_bajo', Icons.warning_amber),
+              const SizedBox(width: 8),
+              _buildFilterChip('Agotados', 'agotados', Icons.remove_shopping_cart),
 
-          // Separador visual
-          Container(
-            width: 1,
-            height: 24,
-            color: Colors.grey.shade300,
+              const Spacer(),
+
+              // Botón limpiar filtros
+              if (hayFiltrosActivos)
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _filtroEstado = 'todos';
+                      _filtroMarcaId = null;
+                      _filtroCategoriaId = null;
+                      _filtroUbicacionId = null;
+                      _searchController.clear();
+                    });
+                    _aplicarFiltros();
+                  },
+                  icon: const Icon(Icons.clear, size: 16),
+                  label: const Text('Limpiar filtros'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red.shade700,
+                  ),
+                ),
+            ],
           ),
-          const SizedBox(width: 16),
 
-          // 🔥 Dropdown de Categoría
-          Flexible(
-            child: _buildDropdownCategoria(),
-          ),
-          const SizedBox(width: 12),
+          const SizedBox(height: 8),
 
-          // Dropdown de Marca
-          Flexible(
-            child: _buildDropdownMarca(),
-          ),
-
-          const Spacer(),
-
-          // Botón limpiar filtros (solo si hay filtros activos)
-          if (hayFiltrosActivos)
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _filtroEstado = 'todos';
-                  _filtroMarcaId = null;
-                  _filtroCategoriaId = null;
-                  _searchController.clear();
-                });
-                _aplicarFiltros();
-              },
-              icon: const Icon(Icons.clear, size: 16),
-              label: const Text('Limpiar filtros'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red.shade700,
+          // ==================== FILA 2: DROPDOWNS ====================
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdownCategoria(),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDropdownMarca(),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDropdownUbicacion(),  // 🔥 NUEVO
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -626,6 +670,73 @@ class _ProductosPageState extends State<ProductosPage> {
     );
   }
 
+  // 🔥 Dropdown de Ubicación
+  Widget _buildDropdownUbicacion() {
+    final seleccionada = _filtroUbicacionId != null;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: seleccionada ? Colors.indigo.shade700 : Colors.grey.shade300,
+          width: seleccionada ? 2 : 1,
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int?>(
+          value: _filtroUbicacionId,
+          isExpanded: true,
+          hint: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.location_on, size: 16, color: Colors.grey.shade600),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  'Depósitos',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          icon: Icon(
+            Icons.arrow_drop_down,
+            color: seleccionada ? Colors.indigo.shade700 : Colors.grey.shade600,
+          ),
+          style: TextStyle(
+            fontSize: 13,
+            color: seleccionada ? Colors.indigo.shade700 : Colors.grey.shade700,
+            fontWeight: seleccionada ? FontWeight.w600 : FontWeight.w500,
+          ),
+          items: [
+            const DropdownMenuItem<int?>(
+              value: null,
+              child: Text('Todas las ubicaciones'),
+            ),
+            ..._ubicaciones.map((u) => DropdownMenuItem<int?>(
+                  value: u.id,
+                  child: Text(
+                    u.nombreCompleto,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                )),
+          ],
+          onChanged: (v) {
+            setState(() => _filtroUbicacionId = v);
+            _aplicarFiltros();
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildFilterChip(String label, String value, IconData icon) {
     final isSelected = _filtroEstado == value;
     return FilterChip(
@@ -707,6 +818,48 @@ class _ProductosPageState extends State<ProductosPage> {
         },
       ),
     );
+  }
+
+  /// Construye el texto con los filtros aplicados
+  String? _construirLeyendaFiltros() {
+    final filtros = <String>[];
+
+    // Estado
+    if (_filtroEstado != 'todos') {
+      final estadoTexto = _filtroEstado == 'stock_bajo'
+          ? 'Stock Bajo'
+          : 'Agotados';
+      filtros.add('Estado: $estadoTexto');
+    }
+
+    // Categoría
+    if (_filtroCategoriaId != null) {
+      final cat = _categorias.where((c) => c.id == _filtroCategoriaId).firstOrNull;
+      filtros.add('Categoría: ${cat != null ? _nombreCategoriaCompleto(cat) : "?"}');
+    }
+
+    // Marca
+    if (_filtroMarcaId != null) {
+      final marca = _marcas.where((m) => m.id == _filtroMarcaId).firstOrNull;
+      filtros.add('Marca: ${marca?.nombre ?? "?"}');
+    }
+
+    // Ubicación
+    if (_filtroUbicacionId != null) {
+      final ubic = _ubicaciones.where((u) => u.id == _filtroUbicacionId).firstOrNull;
+      filtros.add('Ubicación: ${ubic?.nombreCompleto ?? "?"}');
+    }
+
+    // Búsqueda
+    final busqueda = _searchController.text.trim();
+    if (busqueda.isNotEmpty) {
+      filtros.add('Búsqueda: "$busqueda"');
+    }
+
+    // Si no hay filtros, devolver null
+    if (filtros.isEmpty) return null;
+
+    return 'Filtros aplicados: ${filtros.join("  |  ")}';
   }
 }
 

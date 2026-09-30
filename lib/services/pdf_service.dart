@@ -13,6 +13,7 @@ class PdfService {
     required List<List<String>> rows,
     required Configuracion config,
     List<double>? columnWidths,
+    String? leyendaFiltros, 
   }) async {
     final pdf = pw.Document();
 
@@ -27,6 +28,37 @@ class PdfService {
         footer: (context) => _buildFooter(context),
         build: (context) => [
           pw.SizedBox(height: 16),
+          // 🔥 Mostrar leyenda de filtros si existe
+          if (leyendaFiltros != null && leyendaFiltros.isNotEmpty) ...[
+            pw.Container(
+              width: double.infinity,
+              padding: const pw.EdgeInsets.all(8),
+              margin: const pw.EdgeInsets.only(bottom: 12),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.blue50,
+                borderRadius: pw.BorderRadius.circular(4),
+                border: pw.Border.all(color: PdfColors.blue200),
+              ),
+              child: pw.Row(
+                children: [
+                  pw.Text(
+                    '🔍  ',
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
+                  pw.Expanded(
+                    child: pw.Text(
+                      leyendaFiltros,
+                      style: pw.TextStyle(
+                        fontSize: 9,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           _buildTabla(headers, rows, columnWidths),
         ],
       ),

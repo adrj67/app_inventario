@@ -5,24 +5,37 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ExportService {
-  /// Exporta datos a un archivo CSV y lo abre con el programa predeterminado
+    /// Exporta datos a un archivo CSV y lo abre con el programa predeterminado
   static Future<void> exportToCsv({
     required String nombreArchivo,
     required List<String> headers,
     required List<List<dynamic>> rows,
+    String? leyendaFiltros,
   }) async {
-    // 1. Crear el CSV (con BOM UTF-8 para que Excel respete acentos)
-    final List<List<dynamic>> data = [headers, ...rows];
-    final String csvBody = const ListToCsvConverter().convert(data);
-    final String csv = '\uFEFF$csvBody';
+    // 1. Construir las filas del CSV
+    final List<List<dynamic>> data = [];
 
-    // 2. Guardar en Descargas
+    // 🔥 Agregar leyenda de filtros al inicio (si existe)
+    if (leyendaFiltros != null && leyendaFiltros.isNotEmpty) {
+      data.add([leyendaFiltros]);
+      data.add([]); // Línea vacía
+    }
+
+    // Agregar headers y datos
+    data.add(headers);
+    data.addAll(rows);
+
+    // 2. Convertir a CSV
+    final String csvBody = const ListToCsvConverter().convert(data);
+    final String csv = '\uFEFF$csvBody';   // BOM UTF-8
+
+    // 3. Guardar en Descargas
     final directory = await _obtenerCarpetaDescargas();
     final path = '${directory.path}/$nombreArchivo.csv';
     final file = File(path);
     await file.writeAsString(csv);
 
-    // 3. Abrir con el programa predeterminado
+    // 4. Abrir con el programa predeterminado
     await _abrirArchivo(file);
   }
 

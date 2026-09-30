@@ -5,12 +5,13 @@ import 'export_service.dart';
 import 'pdf_service.dart';
 
 class ExportHelper {
-    /// Muestra un diálogo para elegir CSV o PDF
+  /// Muestra un diálogo para elegir CSV o PDF
   static Future<void> mostrarDialogoExportacion({
     required BuildContext context,
     required String titulo,
     required List<String> headers,
     required List<List<String>> rows,
+    String? leyendaFiltros,   // 🔥 NUEVO
   }) async {
     if (rows.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -46,6 +47,33 @@ class ExportHelper {
               '${rows.length} registros',
               style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
+            // 🔥 Mostrar leyenda de filtros si existe
+            if (leyendaFiltros != null && leyendaFiltros.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.filter_alt, size: 16, color: Colors.blue.shade700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        leyendaFiltros,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.blue.shade900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -76,20 +104,26 @@ class ExportHelper {
     );
 
     if (formato == null) return;
-
-    // 🔥 GUARD: Si el widget ya no está montado, salir
     if (!context.mounted) return;
 
     try {
       if (formato == 'csv') {
-        await _exportarCsv(titulo: titulo, headers: headers, rows: rows);
+        await _exportarCsv(
+          titulo: titulo,
+          headers: headers,
+          rows: rows,
+          leyendaFiltros: leyendaFiltros,
+        );
       } else {
-        await _exportarPdf(titulo: titulo, headers: headers, rows: rows);
+        await _exportarPdf(
+          titulo: titulo,
+          headers: headers,
+          rows: rows,
+          leyendaFiltros: leyendaFiltros,
+        );
       }
 
-      // 🔥 GUARD después del await
       if (!context.mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -112,10 +146,11 @@ class ExportHelper {
     }
   }
 
-    static Future<void> _exportarCsv({
+  static Future<void> _exportarCsv({
     required String titulo,
     required List<String> headers,
     required List<List<String>> rows,
+    String? leyendaFiltros,
   }) async {
     final nombreArchivo =
         '${titulo.toLowerCase().replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}';
@@ -124,6 +159,7 @@ class ExportHelper {
       nombreArchivo: nombreArchivo,
       headers: headers,
       rows: rows,
+      leyendaFiltros: leyendaFiltros,   // 🔥 NUEVO
     );
   }
 
@@ -131,6 +167,7 @@ class ExportHelper {
     required String titulo,
     required List<String> headers,
     required List<List<String>> rows,
+    String? leyendaFiltros,
   }) async {
     final config = await ConfiguracionRepository().get();
 
@@ -139,6 +176,7 @@ class ExportHelper {
       headers: headers,
       rows: rows,
       config: config,
+      leyendaFiltros: leyendaFiltros,   // 🔥 NUEVO
     );
   }
 }

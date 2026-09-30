@@ -235,7 +235,7 @@ class _UbicacionesPageState extends State<UbicacionesPage> {
           Row(
             children: [
               ExportButton(
-                titulo: 'Ubicaciones',
+                titulo: 'Depósitos',
                 headers: const [
                   'ID', 'Depósito', 'Pasillo', 'Estante', 'Nivel',
                   'Descripción', 'Productos',
