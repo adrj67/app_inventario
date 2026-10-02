@@ -14,8 +14,13 @@ import '../../../models/ubicacion.dart';
 
 class ProductoForm extends StatefulWidget {
   final Producto? producto;
+  final bool esDuplicado;
 
-  const ProductoForm({super.key, this.producto});
+  const ProductoForm({
+    super.key, 
+    this.producto, 
+    this.esDuplicado = false,
+  });
 
   @override
   State<ProductoForm> createState() => _ProductoFormState();
@@ -78,7 +83,7 @@ class _ProductoFormState extends State<ProductoForm> {
     'Par',
   ];
 
-  bool get _esEdicion => widget.producto != null;
+  bool get _esEdicion => widget.producto != null && !widget.esDuplicado;
 
   @override
   void initState() {
@@ -186,8 +191,14 @@ class _ProductoFormState extends State<ProductoForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_esEdicion ? 'Editar Producto' : 'Nuevo Producto'),
-        backgroundColor: Colors.blue.shade700,
+        title: Text(
+          widget.esDuplicado
+              ? 'Duplicar Producto'
+              : (_esEdicion ? 'Editar Producto' : 'Nuevo Producto'),
+        ),
+        backgroundColor: widget.esDuplicado
+            ? Colors.deepPurple.shade700
+            : Colors.blue.shade700,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -799,11 +810,13 @@ class _ProductoFormState extends State<ProductoForm> {
                       color: Colors.white,
                     ),
                   )
-                : const Icon(Icons.save),
+                : Icon(widget.esDuplicado ? Icons.copy : Icons.save),
             label: Text(
               _guardando
-                  ? 'Guardando...'
-                  : (_esEdicion ? 'Actualizar Producto' : 'Guardar Producto'),
+                ? 'Guardando...'
+                : (widget.esDuplicado
+                    ? 'Crear copia'
+                    : (_esEdicion ? 'Actualizar Producto' : 'Guardar Producto')),
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
@@ -931,7 +944,7 @@ class _ProductoFormState extends State<ProductoForm> {
           : null;
 
       final producto = Producto(
-        id: widget.producto?.id,
+        id: widget.esDuplicado ? null : widget.producto?.id,
         sku: _skuController.text.trim(),
         codigoBarras: _codigoBarrasController.text.trim(),
         nombre: _nombreController.text.trim(),

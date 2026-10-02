@@ -8,6 +8,9 @@ import '../../../widgets/search_field.dart';
 import '../../../widgets/export_button.dart';
 import 'ubicacion_form.dart';
 import '../productos/producto_form.dart';
+import 'package:provider/provider.dart';
+import '../../../controllers/productos_filter_controller.dart';
+
 
 class UbicacionesPage extends StatefulWidget {
   const UbicacionesPage({super.key});
@@ -421,6 +424,14 @@ class _DepositoGrupo extends StatelessWidget {
               onProductoTap: onProductoTap,
             );
           }),
+          /*Padding(
+            padding: const EdgeInsets.all(8),
+            child: TextButton.icon(
+              onPressed: () => _verProductosDeUbicacion(context, ubicacion),
+              icon: const Icon(Icons.arrow_forward, size: 16),
+              label: const Text('Ver todos en Productos'),
+            ),
+          ),*/
         ],
       ),
     );
@@ -530,6 +541,22 @@ class _UbicacionItem extends StatelessWidget {
             ),
             ...productos.map((p) => _buildItemProducto(p)),
           ],
+          // 🔥 Botón Ver en Productos
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    context.read<ProductosFilterController>().filtrarPorUbicacion(ubicacion.id!);
+                  },
+                  icon: const Icon(Icons.arrow_forward, size: 16),
+                  label: const Text('Ver todos en Productos'),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

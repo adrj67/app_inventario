@@ -11,6 +11,8 @@ import '../../../database/categoria_repository.dart';
 import '../../../models/categoria.dart';
 import '../../../database/ubicacion_repository.dart';
 import '../../../models/ubicacion.dart';
+import 'package:provider/provider.dart';
+import '../../../controllers/productos_filter_controller.dart';
 
 class ProductosPage extends StatefulWidget {
   const ProductosPage({super.key});
@@ -53,11 +55,41 @@ class _ProductosPageState extends State<ProductosPage> {
     _cargarCategorias();
     _cargarUbicaciones(); 
     _loadProductos();
+
+    // 🔥 Escuchar cambios del controller de filtros
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final controller = context.read<ProductosFilterController>();
+      controller.addListener(_onFiltroExternoAplicado);
+
+      // Aplicar filtro inicial si ya hay uno
+      _aplicarFiltroExterno(controller);
+    });
+  }
+
+  void _onFiltroExternoAplicado() {
+    if (!mounted) return;
+    final controller = context.read<ProductosFilterController>();
+    _aplicarFiltroExterno(controller);
+  }
+
+  void _aplicarFiltroExterno(ProductosFilterController controller) {
+    setState(() {
+      _filtroCategoriaId = controller.categoriaId;
+      _filtroMarcaId = controller.marcaId;
+      _filtroUbicacionId = controller.ubicacionId;
+      _filtroEstado = controller.estado;
+    });
+    _aplicarFiltros();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    // 🔥 Quitar el listener
+    try {
+      context.read<ProductosFilterController>().removeListener(_onFiltroExternoAplicado);
+    } catch (_) {}
     super.dispose();
   }
 
@@ -108,7 +140,10 @@ class _ProductosPageState extends State<ProductosPage> {
 
     // Filtro por categoría
     if (_filtroCategoriaId != null) {
-      resultado = resultado.where((p) => p.categoriaId == _filtroCategoriaId).toList();
+      final idsDescendientes = _obtenerIdsDescendientes(_filtroCategoriaId!);
+      resultado = resultado
+          .where((p) => p.categoriaId != null && idsDescendientes.contains(p.categoriaId))
+          .toList();
     }
 
     // 🔥 NUEVO: Filtro por ubicación
@@ -136,6 +171,41 @@ class _ProductosPageState extends State<ProductosPage> {
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (context) => ProductoForm(producto: producto),
+      ),
+    );
+
+    if (resultado == true) {
+      _searchController.clear();
+      _filtroEstado = 'todos';
+      await _loadProductos();
+    }
+  }
+
+  Future<void> _duplicarProducto(Producto original) async {
+    // Crear una copia del producto con los campos únicos limpios
+    final copia = original.copyWith(
+      id: null,                                          // Nuevo ID
+      sku: '',                                           // SKU debe ser único
+      codigoBarras: '',                                  // Código debe ser único
+      nombre: '${original.nombre} (copia)',              // Identificar
+      stockActual: 0,                                    // Producto nuevo
+      fechaCompra: DateTime.now(),                       // Fecha actual
+      fechaCreacion: DateTime.now(),
+      fechaUltimaModificacion: DateTime.now(),
+      //fechaVenta: null,
+      //numeroFacturaVenta: null,
+      // El resto se mantiene igual
+    );
+
+    // Abrir el formulario con los datos precargados
+    final resultado = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => ProductoForm(
+          producto: copia,
+          esDuplicado: true,   // 🔥 Marca como duplicado para que no lo trate como edición
+        ),
       ),
     );
 
@@ -221,6 +291,25 @@ class _ProductosPageState extends State<ProductosPage> {
       return '${padre.nombre} > ${cat.nombre}';
     }
     return cat.nombre;
+  }
+
+    /// Devuelve los IDs de una categoría + todos sus descendientes (subcategorías)
+  Set<int> _obtenerIdsDescendientes(int categoriaRaizId) {
+    final ids = <int>{categoriaRaizId};
+
+    // Búsqueda recursiva de descendientes
+    void buscarHijos(int padreId) {
+      final hijos = _categorias.where((c) => c.categoriaPadreId == padreId);
+      for (final hijo in hijos) {
+        if (hijo.id != null && !ids.contains(hijo.id)) {
+          ids.add(hijo.id!);
+          buscarHijos(hijo.id!); // Recursión
+        }
+      }
+    }
+
+    buscarHijos(categoriaRaizId);
+    return ids;
   }
 
   @override
@@ -360,7 +449,7 @@ class _ProductosPageState extends State<ProductosPage> {
     final currencyFormat = NumberFormat.currency(locale: 'es_AR', symbol: '\$', decimalDigits: 0);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Row(
         children: [
           Expanded(
@@ -411,50 +500,53 @@ class _ProductosPageState extends State<ProductosPage> {
     required MaterialColor color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: color.shade100),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withValues(alpha: 0.05),
             spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
       child: Row(
         children: [
+          // Ícono más chico
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: color.shade50,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(icono, color: color.shade700, size: 20),
+            child: Icon(icono, color: color.shade700, size: 16),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
+          // Textos más compactos
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   titulo,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 10,
                     color: Colors.grey.shade600,
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
                 Text(
                   valor,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: color.shade700,
                   ),
@@ -477,61 +569,82 @@ class _ProductosPageState extends State<ProductosPage> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ==================== FILA 1: ESTADOS + LIMPIAR ====================
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 🔥 Si el ancho es menor a 900px, apilamos los dropdowns
+          final esAngosto = constraints.maxWidth < 900;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildFilterChip('Todos', 'todos', Icons.list),
-              const SizedBox(width: 8),
-              _buildFilterChip('Stock Bajo', 'stock_bajo', Icons.warning_amber),
-              const SizedBox(width: 8),
-              _buildFilterChip('Agotados', 'agotados', Icons.remove_shopping_cart),
-
-              const Spacer(),
-
-              // Botón limpiar filtros
-              if (hayFiltrosActivos)
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _filtroEstado = 'todos';
-                      _filtroMarcaId = null;
-                      _filtroCategoriaId = null;
-                      _filtroUbicacionId = null;
-                      _searchController.clear();
-                    });
-                    _aplicarFiltros();
-                  },
-                  icon: const Icon(Icons.clear, size: 16),
-                  label: const Text('Limpiar filtros'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.red.shade700,
+              // ==================== FILA 1: ESTADOS + LIMPIAR ====================
+              Row(
+                children: [
+                  // Chips con scroll horizontal si no entran
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildFilterChip('Todos', 'todos', Icons.list),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Stock Bajo', 'stock_bajo', Icons.warning_amber),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Agotados', 'agotados', Icons.remove_shopping_cart),
+                        ],
+                      ),
+                    ),
                   ),
+
+                  // Botón limpiar filtros (solo si hay filtros activos)
+                  if (hayFiltrosActivos) ...[
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _filtroEstado = 'todos';
+                          _filtroMarcaId = null;
+                          _filtroCategoriaId = null;
+                          _filtroUbicacionId = null;
+                          _searchController.clear();
+                        });
+                        _aplicarFiltros();
+                      },
+                      icon: const Icon(Icons.clear, size: 16),
+                      label: const Text('Limpiar'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red.shade700,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              // ==================== FILA 2: DROPDOWNS ====================
+              if (esAngosto) ...[
+                // 🔥 Layout vertical para pantallas angostas
+                _buildDropdownCategoria(),
+                const SizedBox(height: 8),
+                _buildDropdownMarca(),
+                const SizedBox(height: 8),
+                _buildDropdownUbicacion(),
+              ] else ...[
+                // 🔥 Layout horizontal para pantallas anchas
+                Row(
+                  children: [
+                    Expanded(child: _buildDropdownCategoria()),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildDropdownMarca()),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildDropdownUbicacion()),
+                  ],
                 ),
+              ],
             ],
-          ),
-
-          const SizedBox(height: 8),
-
-          // ==================== FILA 2: DROPDOWNS ====================
-          Row(
-            children: [
-              Expanded(
-                child: _buildDropdownCategoria(),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildDropdownMarca(),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildDropdownUbicacion(),  // 🔥 NUEVO
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -541,10 +654,11 @@ class _ProductosPageState extends State<ProductosPage> {
     final seleccionada = _filtroCategoriaId != null;
 
     return Container(
+      height: 42,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(21),
         border: Border.all(
           color: seleccionada ? Colors.purple.shade700 : Colors.grey.shade300,
           width: seleccionada ? 2 : 1,
@@ -554,6 +668,7 @@ class _ProductosPageState extends State<ProductosPage> {
         child: DropdownButton<int?>(
           value: _filtroCategoriaId,
           isExpanded: true,
+          isDense: true,
           hint: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -561,13 +676,14 @@ class _ProductosPageState extends State<ProductosPage> {
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  'Todas las categorías',
+                  'Categorías',
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.grey.shade700,
                     fontWeight: FontWeight.w500,
                   ),
                   overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
@@ -581,6 +697,56 @@ class _ProductosPageState extends State<ProductosPage> {
             color: seleccionada ? Colors.purple.shade700 : Colors.grey.shade700,
             fontWeight: seleccionada ? FontWeight.w600 : FontWeight.w500,
           ),
+          selectedItemBuilder: (context) {
+            return [
+              // Opción "Todas"
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.category, size: 16, color: Colors.purple.shade700),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'Todas las categorías',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.purple.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Opciones de categorías
+              ..._categorias.map((c) => Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.category, size: 16, color: Colors.purple.shade700),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            _nombreCategoriaCompleto(c),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.purple.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+            ];
+          },
           items: [
             const DropdownMenuItem<int?>(
               value: null,
@@ -675,10 +841,11 @@ class _ProductosPageState extends State<ProductosPage> {
     final seleccionada = _filtroUbicacionId != null;
 
     return Container(
+      height: 42,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(21),
         border: Border.all(
           color: seleccionada ? Colors.indigo.shade700 : Colors.grey.shade300,
           width: seleccionada ? 2 : 1,
@@ -688,6 +855,7 @@ class _ProductosPageState extends State<ProductosPage> {
         child: DropdownButton<int?>(
           value: _filtroUbicacionId,
           isExpanded: true,
+          isDense: true,
           hint: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -695,13 +863,14 @@ class _ProductosPageState extends State<ProductosPage> {
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  'Depósitos',
+                  'Ubicaciones',
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.grey.shade700,
                     fontWeight: FontWeight.w500,
                   ),
                   overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
@@ -715,6 +884,56 @@ class _ProductosPageState extends State<ProductosPage> {
             color: seleccionada ? Colors.indigo.shade700 : Colors.grey.shade700,
             fontWeight: seleccionada ? FontWeight.w600 : FontWeight.w500,
           ),
+          selectedItemBuilder: (context) {
+            return [
+              // Opción "Todas"
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.location_on, size: 16, color: Colors.indigo.shade700),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'Todas las ubicaciones',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.indigo.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Opciones de ubicaciones
+              ..._ubicaciones.map((u) => Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.location_on, size: 16, color: Colors.indigo.shade700),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            u.nombreCompleto,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.indigo.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+            ];
+          },
           items: [
             const DropdownMenuItem<int?>(
               value: null,
@@ -739,29 +958,46 @@ class _ProductosPageState extends State<ProductosPage> {
 
   Widget _buildFilterChip(String label, String value, IconData icon) {
     final isSelected = _filtroEstado == value;
-    return FilterChip(
-      selected: isSelected,
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: isSelected ? Colors.white : Colors.grey.shade700),
-          const SizedBox(width: 6),
-          Text(label),
-        ],
+
+    return Material(
+      color: isSelected ? Colors.blue.shade700 : Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: () {
+          setState(() => _filtroEstado = value);
+          _aplicarFiltros();
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? Colors.blue.shade700 : Colors.grey.shade300,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? Colors.white : Colors.grey.shade700,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isSelected ? Colors.white : Colors.grey.shade700,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
-      selectedColor: Colors.blue.shade700,
-      backgroundColor: Colors.white,
-      side: BorderSide(
-        color: isSelected ? Colors.blue.shade700 : Colors.grey.shade300,
-      ),
-      onSelected: (selected) {
-        setState(() => _filtroEstado = value);
-        _aplicarFiltros();
-      },
     );
   }
 
@@ -814,6 +1050,7 @@ class _ProductosPageState extends State<ProductosPage> {
             producto: producto,
             onTap: () => _abrirFormulario(producto: producto),
             onDelete: () => _confirmarEliminar(producto),
+            onDuplicar: () => _duplicarProducto(producto),
           );
         },
       ),
@@ -869,11 +1106,13 @@ class _ProductoCard extends StatelessWidget {
   final Producto producto;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final VoidCallback onDuplicar;
 
   const _ProductoCard({
     required this.producto,
     required this.onTap,
     required this.onDelete,
+    required this.onDuplicar,
   });
 
   MaterialColor _colorEstado() {
@@ -1058,6 +1297,13 @@ class _ProductoCard extends StatelessWidget {
 
               const SizedBox(width: 8),
 
+              // 🔥 Botón Duplicar
+              IconButton(
+                icon: const Icon(Icons.copy_outlined, color: Colors.blue),
+                onPressed: onDuplicar,
+                tooltip: 'Duplicar producto',
+              ),
+              // Botón Eliminar
               IconButton(
                 icon: const Icon(Icons.delete_outline, color: Colors.red),
                 onPressed: onDelete,

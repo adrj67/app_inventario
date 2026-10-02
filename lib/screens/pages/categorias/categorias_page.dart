@@ -8,6 +8,8 @@ import '../../../widgets/search_field.dart';
 import '../../../widgets/export_button.dart';
 import 'categoria_form.dart';
 import '../productos/producto_form.dart';
+import 'package:provider/provider.dart';
+import '../../../controllers/productos_filter_controller.dart';
 
 class CategoriasPage extends StatefulWidget {
   const CategoriasPage({super.key});
@@ -276,7 +278,7 @@ class _CategoriasPageState extends State<CategoriasPage> {
               ElevatedButton.icon(
                 onPressed: () => _abrirFormulario(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple.shade700,
+                  backgroundColor: Colors.purple.shade700, 
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -504,6 +506,17 @@ class _CategoriaRaizCard extends StatelessWidget {
                   onPressed: onAgregarSub,
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('Agregar subcategoría'),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: () {
+                    // 🔥 Llamar al controller directamente
+                    context.read<ProductosFilterController>().filtrarPorCategoria(categoria.id!);
+                  },
+                  icon: const Icon(Icons.arrow_forward, size: 16),
+                  label: Text(
+                    'Ver $totalProductos producto${totalProductos != 1 ? "s" : ""}',
+                  ),
                 ),
               ],
             ),

@@ -8,6 +8,8 @@ import '../../../widgets/search_field.dart';
 import '../../../widgets/export_button.dart';
 import 'marca_form.dart';
 import '../productos/producto_form.dart';
+import 'package:provider/provider.dart';
+import '../../../controllers/productos_filter_controller.dart';
 
 class MarcasPage extends StatefulWidget {
   const MarcasPage({super.key});
@@ -460,7 +462,10 @@ class _MarcaCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton.icon(
-                    onPressed: () => _verTodosProductos(context),
+                    onPressed: () {
+                        context.read<ProductosFilterController>().filtrarPorMarca(marca.id!);
+                    },
+                    //onPressed: () => _verTodosProductos(context, marca),
                     icon: const Icon(Icons.arrow_forward, size: 16),
                     label: const Text('Ver todos en Productos'),
                   ),
@@ -563,7 +568,12 @@ class _MarcaCard extends StatelessWidget {
     );
   }
 
-  void _verTodosProductos(BuildContext context) {
+  /*void _verTodosProductos(BuildContext context, Marca marca) {
+    // 🔥 Enviar filtro al controller
+    context.read<ProductosFilterController>().filtrarPorMarca(marca.id!);
+  }*/
+
+  /* void _verTodosProductos(BuildContext context) {
     // Por ahora mostramos un SnackBar informativo
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -572,5 +582,5 @@ class _MarcaCard extends StatelessWidget {
         duration: const Duration(seconds: 2),
       ),
     );
-  }
+  }*/
 }
