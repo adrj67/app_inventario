@@ -13,6 +13,7 @@ import '../../../models/marca.dart';
 import '../../../models/ubicacion.dart';
 import '../../../database/historial_precio_repository.dart';
 import '../../../models/historial_precio.dart';
+import '../../../widgets/export_button.dart';
 
 class ProductoForm extends StatefulWidget {
   final Producto? producto;
@@ -75,6 +76,10 @@ class _ProductoFormState extends State<ProductoForm> {
   List<Ubicacion> _ubicaciones = [];
   bool _cargandoRelaciones = true;
 
+  //Historial de precios
+  List<HistorialPrecio> _historial = [];
+  bool _cargandoHistorial = false;
+
   final List<String> _unidades = [
     'Unidad',
     'Kg',
@@ -117,16 +122,34 @@ class _ProductoFormState extends State<ProductoForm> {
     //_fechaFinGarantia = p?.fechaFinGarantia;
     _proveedorId = p?.proveedorId;
 
-    _cargarProveedores();
-
     _categoriaId = p?.categoriaId;
     _marcaId = p?.marcaId;
     _ubicacionId = p?.ubicacionId;
 
+    _cargarProveedores();
     _cargarRelaciones();
 
     // Listener para recalcular precio sugerido
     _precioCompraController.addListener(_recalcularPrecioSugerido);
+
+    // Cargar historial si es edición (no nuevo, no duplicado)
+    if (_esEdicion && widget.producto?.id != null) {
+      _cargarHistorial(widget.producto!.id!);
+    }
+  }
+
+  Future<void> _cargarHistorial(int productoId) async {
+    setState(() => _cargandoHistorial = true);
+    try {
+      final historial = await _historialRepository.getByProducto(productoId);
+      setState(() {
+        _historial = historial;
+        _cargandoHistorial = false;
+      });
+    } catch (e) {
+      debugPrint('Error cargando historial: $e');
+      setState(() => _cargandoHistorial = false);
+    }
   }
 
   @override
@@ -190,6 +213,323 @@ class _ProductoFormState extends State<ProductoForm> {
     }
   }
 
+    Widget _buildSeccionHistorial() {
+    return _buildCard(
+      titulo: 'Historial de Precios',
+      icono: Icons.history,
+      trailing: _historial.isEmpty
+          ? null
+          : ExportButton(
+              titulo: 'Historial de Precios',
+              headers: const [
+                'Fecha',
+                'Precio Compra',
+                'Precio Venta',
+                'Margen',
+                '% Ganancia',
+                'Nota',
+              ],
+              rows: _historial.map((h) {
+                return [
+                  DateFormat('dd/MM/yyyy HH:mm').format(h.fecha),
+                  h.precioCompra.toStringAsFixed(2),
+                  h.precioVenta.toStringAsFixed(2),
+                  h.margenGanancia.toStringAsFixed(2),
+                  '${h.porcentajeGanancia.toStringAsFixed(1)}%',
+                  h.nota ?? '',
+                ];
+              }).toList(),
+              color: Colors.blue,
+              leyendaFiltros: 'Producto: ${_nombreController.text.trim()}  |  '
+                  'SKU: ${_skuController.text.trim()}',
+            ),
+      children: [
+        if (_cargandoHistorial)
+          const Padding(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_historial.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.history_toggle_off, size: 40, color: Colors.grey.shade400),
+                const SizedBox(height: 8),
+                Text(
+                  'Sin cambios de precio registrados',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                ),
+              ],
+            ),
+          )
+        else
+          Column(
+            children: [
+              // Contador
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${_historial.length} cambio${_historial.length != 1 ? "s" : ""} registrado${_historial.length != 1 ? "s" : ""} · El más reciente arriba',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue.shade900,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Lista de cambios
+              ..._historial.asMap().entries.map((entry) {
+                final index = entry.key;
+                final cambio = entry.value;
+                final anterior = index < _historial.length - 1 ? _historial[index + 1] : null;
+
+                return _buildItemHistorial(cambio, anterior, esActual: index == 0);
+              }),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildItemHistorial(
+    HistorialPrecio cambio,
+    HistorialPrecio? anterior, {
+    bool esActual = false,
+  }) {
+    final currencyFormat = NumberFormat.currency(
+      locale: 'es_AR',
+      symbol: '\$',
+      decimalDigits: 0,
+    );
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+
+    // Calcular cambio de precio de compra
+    final double compraCambio = anterior != null
+        ? cambio.precioCompra - anterior.precioCompra
+        : 0.0;
+    final double ventaCambio = anterior != null
+        ? cambio.precioVenta - anterior.precioVenta
+        : 0.0;
+
+    // Colores según el cambio
+    final compraAumento = compraCambio > 0;
+    final ventaAumento = ventaCambio > 0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: esActual ? Colors.blue.shade50 : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: esActual ? Colors.blue.shade200 : Colors.grey.shade200,
+          width: esActual ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header con fecha y badge
+          Row(
+            children: [
+              Icon(
+                esActual ? Icons.check_circle : Icons.history,
+                size: 16,
+                color: esActual ? Colors.blue.shade700 : Colors.grey.shade600,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                dateFormat.format(cambio.fecha),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: esActual ? Colors.blue.shade700 : Colors.grey.shade700,
+                ),
+              ),
+              if (esActual) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade700,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'ACTUAL',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+              const Spacer(),
+              // Margen
+              Text(
+                'Margen: ${cambio.porcentajeGanancia.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: cambio.porcentajeGanancia > 30
+                      ? Colors.green.shade700
+                      : Colors.orange.shade700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Tabla de precios
+          Row(
+            children: [
+              // Precio compra
+              Expanded(
+                child: _buildPrecioHistorial(
+                  'Compra',
+                  cambio.precioCompra,
+                  anterior?.precioCompra,
+                  compraCambio,
+                  compraAumento,
+                  currencyFormat,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Precio venta
+              Expanded(
+                child: _buildPrecioHistorial(
+                  'Venta',
+                  cambio.precioVenta,
+                  anterior?.precioVenta,
+                  ventaCambio,
+                  ventaAumento,
+                  currencyFormat,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Margen
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Margen \$',
+                      style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                    ),
+                    Text(
+                      currencyFormat.format(cambio.margenGanancia),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Nota (si existe)
+          if (cambio.nota != null && cambio.nota!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.note, size: 14, color: Colors.grey.shade600),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      cambio.nota!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade700,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPrecioHistorial(
+    String label,
+    double precioActual,
+    double? precioAnterior,
+    double cambio,
+    bool esAumento,
+    NumberFormat formatter,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+        ),
+        Row(
+          children: [
+            Text(
+              formatter.format(precioActual),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (precioAnterior != null && cambio != 0) ...[
+              const SizedBox(width: 4),
+              Icon(
+                esAumento ? Icons.arrow_upward : Icons.arrow_downward,
+                size: 12,
+                color: esAumento ? Colors.red.shade700 : Colors.green.shade700,
+              ),
+              Text(
+                formatter.format(cambio.abs()),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: esAumento ? Colors.red.shade700 : Colors.green.shade700,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -231,6 +571,11 @@ class _ProductoFormState extends State<ProductoForm> {
                   _buildSeccionCaracteristicas(),
                   const SizedBox(height: 16),
                   _buildSeccionEstado(),
+                  // Historial (solo si es edición)
+                  if (_esEdicion && widget.producto?.id != null) ...[
+                    const SizedBox(height: 16),
+                    _buildSeccionHistorial(),
+                  ],
                   const SizedBox(height: 24),
                   _buildBotones(),
                 ],
@@ -834,6 +1179,7 @@ class _ProductoFormState extends State<ProductoForm> {
     required String titulo,
     required IconData icono,
     required List<Widget> children,
+    Widget? trailing,
   }) {
     return Card(
       elevation: 2,
@@ -862,6 +1208,10 @@ class _ProductoFormState extends State<ProductoForm> {
                     color: Colors.grey.shade800,
                   ),
                 ),
+                if(trailing !=null)...[
+                    const Spacer(),
+                    trailing,
+                ]
               ],
             ),
             const SizedBox(height: 16),
