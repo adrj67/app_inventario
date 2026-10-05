@@ -210,6 +210,20 @@ class DatabaseHelper {
           )
         ''');
 
+        // ==================== HISTORIAL DE PRECIOS ====================
+        await db.execute('''
+          CREATE TABLE historial_precios(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            productoId INTEGER NOT NULL,
+            precioCompra REAL NOT NULL,
+            precioVenta REAL NOT NULL,
+            margenGanancia REAL,
+            porcentajeGanancia REAL,
+            fecha TEXT NOT NULL,
+            nota TEXT
+          )
+        ''');
+
       // ==================== DATOS DE EJEMPLO ====================
       final now = DateTime.now().toIso8601String();  // 🔥 SOLO UNA VEZ
       

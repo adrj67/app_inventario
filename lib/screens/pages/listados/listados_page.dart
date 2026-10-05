@@ -5,6 +5,9 @@ import '../../../database/movimiento_repository.dart';
 import '../../../database/categoria_repository.dart';
 import '../../../database/proveedor_repository.dart';
 import 'reporte_detalle_page.dart';
+//import '../../../database/marca_repository.dart';
+//import '../../../database/ubicacion_repository.dart';
+
 
 class ListadosPage extends StatefulWidget {
   const ListadosPage({super.key});
@@ -18,6 +21,8 @@ class _ListadosPageState extends State<ListadosPage> {
   final MovimientoRepository _movimientoRepo = MovimientoRepository();
   final CategoriaRepository _categoriaRepo = CategoriaRepository();
   final ProveedorRepository _proveedorRepo = ProveedorRepository();
+  //final MarcaRepository _marcaRepo = MarcaRepository();
+  //final UbicacionRepository _ubicacionRepo = UbicacionRepository();
 
   bool _isLoading = true;
 
@@ -339,6 +344,30 @@ class _ListadosPageState extends State<ListadosPage> {
         color: Colors.amber,
         tipo: 'historial',
         contador: _totalMovimientos,
+      ),
+      _ReporteData(
+        titulo: 'Top Marcas',
+        descripcion: 'Ranking de marcas por productos y valor',
+        icono: Icons.emoji_events,
+        color: Colors.teal,
+        tipo: 'top_marcas',
+        contador: null,
+      ),
+      _ReporteData(
+        titulo: 'Top Categorías',
+        descripcion: 'Ranking de categorías por productos y valor',
+        icono: Icons.emoji_events,
+        color: Colors.purple,
+        tipo: 'top_categorias',
+        contador: null,
+      ),
+      _ReporteData(
+        titulo: 'Top Ubicaciones',
+        descripcion: 'Ranking de depósitos por productos y valor',
+        icono: Icons.emoji_events,
+        color: Colors.indigo,
+        tipo: 'top_ubicaciones',
+        contador: null,
       ),
     ];
 

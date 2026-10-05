@@ -11,6 +11,8 @@ import '../../../database/ubicacion_repository.dart';
 import '../../../models/categoria.dart';
 import '../../../models/marca.dart';
 import '../../../models/ubicacion.dart';
+import '../../../database/historial_precio_repository.dart';
+import '../../../models/historial_precio.dart';
 
 class ProductoForm extends StatefulWidget {
   final Producto? producto;
@@ -33,6 +35,7 @@ class _ProductoFormState extends State<ProductoForm> {
   final CategoriaRepository _categoriaRepository = CategoriaRepository();
   final MarcaRepository _marcaRepository = MarcaRepository();
   final UbicacionRepository _ubicacionRepository = UbicacionRepository();
+  final HistorialPrecioRepository _historialRepository = HistorialPrecioRepository();
 
   // ==================== CONTROLLERS ====================
   late final TextEditingController _skuController;
@@ -922,26 +925,21 @@ class _ProductoFormState extends State<ProductoForm> {
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // 🔥 DEBUG TEMPORAL
-    debugPrint('=== VALORES ANTES DE GUARDAR ===');
-    debugPrint('categoriaId: $_categoriaId');
-    debugPrint('marcaId: $_marcaId');
-    debugPrint('ubicacionId: $_ubicacionId');
-    debugPrint('proveedorId: $_proveedorId');
-    debugPrint('===============================');
-
     setState(() => _guardando = true);
 
     try {
-
+      // 🔥 Calcular fecha fin de garantía
       final mesesGarantia = int.tryParse(_mesesGarantiaController.text);
-      final fechaFinGarantia = mesesGarantia != null && mesesGarantia > 0
+      final fechaFinGarantia = (mesesGarantia != null && mesesGarantia > 0)
           ? DateTime(
               _fechaCompra.year,
               _fechaCompra.month + mesesGarantia,
               _fechaCompra.day,
             )
           : null;
+
+      final precioCompraNuevo = double.tryParse(_precioCompraController.text) ?? 0;
+      final precioVentaNuevo = double.tryParse(_precioVentaController.text) ?? 0;
 
       final producto = Producto(
         id: widget.esDuplicado ? null : widget.producto?.id,
@@ -950,22 +948,22 @@ class _ProductoFormState extends State<ProductoForm> {
         nombre: _nombreController.text.trim(),
         descripcion: _textoONull(_descripcionController.text),
         modelo: _textoONull(_modeloController.text),
-        categoriaId: _categoriaId,      // 🔥 NUEVO
-        marcaId: _marcaId,               // 🔥 NUEVO
-        ubicacionId: _ubicacionId,       // 🔥 NUEVO
+        categoriaId: _categoriaId,
+        marcaId: _marcaId,
+        ubicacionId: _ubicacionId,
         proveedorId: _proveedorId,
         stockActual: int.tryParse(_stockActualController.text) ?? 0,
         stockMinimo: int.tryParse(_stockMinimoController.text) ?? 0,
         stockMaximo: int.tryParse(_stockMaximoController.text) ?? 0,
         unidadMedida: _unidadMedida,
-        precioCompra: double.tryParse(_precioCompraController.text) ?? 0,
-        precioVenta: double.tryParse(_precioVentaController.text) ?? 0,
+        precioCompra: precioCompraNuevo,
+        precioVenta: precioVentaNuevo,
         precioSugerido: double.tryParse(_precioSugeridoController.text),
         fechaCompra: _fechaCompra,
         numeroFactura: _textoONull(_numeroFacturaController.text),
         peso: double.tryParse(_pesoController.text),
         dimensiones: _textoONull(_dimensionesController.text),
-        mesesGarantia: mesesGarantia, //int.tryParse(_mesesGarantiaController.text),
+        mesesGarantia: mesesGarantia,
         fechaFinGarantia: fechaFinGarantia,
         estaActivo: _estaActivo,
         estaDisponible: _estaDisponible,
@@ -975,20 +973,248 @@ class _ProductoFormState extends State<ProductoForm> {
         nota: _textoONull(_notaController.text),
       );
 
-      await _repository.save(producto);
+      // 🔥 Detectar si es un cambio de precio
+      final esNuevo = !_esEdicion;
+      final esDuplicado = widget.esDuplicado;
+      final precioCambio = !esNuevo &&
+          !esDuplicado &&
+          (widget.producto!.precioCompra != precioCompraNuevo ||
+              widget.producto!.precioVenta != precioVentaNuevo);
+
+      // 🔥 Si cambió el precio, mostrar diálogo de motivo
+      String? notaCambio;
+      if (precioCambio) {
+        notaCambio = await _pedirMotivoCambio(
+          precioCompraAnterior: widget.producto!.precioCompra,
+          precioCompraNuevo: precioCompraNuevo,
+          precioVentaAnterior: widget.producto!.precioVenta,
+          precioVentaNuevo: precioVentaNuevo,
+        );
+
+        // Si el usuario canceló (null), abortar el guardado
+        if (notaCambio == '__CANCELADO__') {
+          if (mounted) setState(() => _guardando = false);
+          return;
+        }
+      }
+
+      // 🔥 Guardar el producto
+      final id = await _repository.save(producto);
+
+      // 🔥 Registrar en historial si corresponde
+      if (esNuevo || esDuplicado) {
+        // Producto nuevo → registrar precio inicial
+        final idFinal = _esEdicion ? producto.id! : id;
+        await _historialRepository.registrar(HistorialPrecio(
+          productoId: idFinal,
+          precioCompra: precioCompraNuevo,
+          precioVenta: precioVentaNuevo,
+          margenGanancia: precioVentaNuevo - precioCompraNuevo,
+          porcentajeGanancia: precioCompraNuevo > 0
+              ? ((precioVentaNuevo - precioCompraNuevo) / precioCompraNuevo) * 100
+              : 0,
+          nota: esDuplicado ? 'Precio inicial (duplicado)' : 'Precio inicial',
+        ));
+      } else if (precioCambio) {
+        // Producto editado con cambio de precio → registrar cambio
+        await _historialRepository.registrar(HistorialPrecio(
+          productoId: producto.id!,
+          precioCompra: precioCompraNuevo,
+          precioVenta: precioVentaNuevo,
+          margenGanancia: precioVentaNuevo - precioCompraNuevo,
+          porcentajeGanancia: precioCompraNuevo > 0
+              ? ((precioVentaNuevo - precioCompraNuevo) / precioCompraNuevo) * 100
+              : 0,
+          nota: notaCambio,
+        ));
+      }
 
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al guardar: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
       setState(() => _guardando = false);
     }
+  }
+
+  /// Muestra un diálogo para pedir el motivo del cambio de precio
+  /// Devuelve:
+  ///   - null: no hay motivo (pero continúa)
+  ///   - '__CANCELADO__': el usuario canceló el guardado
+  ///   - string: motivo ingresado
+  Future<String?> _pedirMotivoCambio({
+    required double precioCompraAnterior,
+    required double precioCompraNuevo,
+    required double precioVentaAnterior,
+    required double precioVentaNuevo,
+  }) async {
+    final controller = TextEditingController();
+    final currencyFormat = NumberFormat.currency(
+      locale: 'es_AR',
+      symbol: '\$',
+      decimalDigits: 0,
+    );
+
+    final resultado = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.price_change, color: Colors.orange.shade700),
+            const SizedBox(width: 8),
+            const Text('Cambio de Precio'),
+          ],
+        ),
+        content: SizedBox(
+          width: 500,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Detectamos un cambio en los precios. Podés registrar el motivo:',
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 16),
+
+              // Comparación de precios de compra
+              if (precioCompraAnterior != precioCompraNuevo)
+                _buildFilaCambio(
+                  'Precio de Compra',
+                  precioCompraAnterior,
+                  precioCompraNuevo,
+                  currencyFormat,
+                ),
+
+              // Comparación de precios de venta
+              if (precioVentaAnterior != precioVentaNuevo)
+                _buildFilaCambio(
+                  'Precio de Venta',
+                  precioVentaAnterior,
+                  precioVentaNuevo,
+                  currencyFormat,
+                ),
+
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                maxLines: 2,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Motivo del cambio (opcional)',
+                  hintText: 'Ej: Aumento de proveedor, ajuste por inflación...',
+                  prefixIcon: const Icon(Icons.note),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, '__CANCELADO__'),
+            child: const Text('Cancelar cambio'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text('Sin motivo'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(
+              context,
+              controller.text.trim().isEmpty ? null : controller.text.trim(),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue.shade700,
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.check, size: 18),
+            label: const Text('Guardar con motivo'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+    return resultado;
+  }
+
+  Widget _buildFilaCambio(
+    String label,
+    double anterior,
+    double nuevo,
+    NumberFormat formatter,
+  ) {
+    final aumento = nuevo - anterior;
+    final porcentaje = anterior > 0 ? (aumento / anterior) * 100 : 0;
+    final esAumento = aumento > 0;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 130,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+          Text(
+            formatter.format(anterior),
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+              decoration: TextDecoration.lineThrough,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(
+            esAumento ? Icons.arrow_upward : Icons.arrow_downward,
+            size: 14,
+            color: esAumento ? Colors.red.shade700 : Colors.green.shade700,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            formatter.format(nuevo),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: esAumento ? Colors.red.shade700 : Colors.green.shade700,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: esAumento ? Colors.red.shade50 : Colors.green.shade50,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              '${esAumento ? "+" : ""}${porcentaje.toStringAsFixed(1)}%',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: esAumento ? Colors.red.shade700 : Colors.green.shade700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   String _calcularEstado() {

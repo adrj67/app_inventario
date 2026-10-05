@@ -10,6 +10,13 @@ import '../../../models/categoria.dart';
 import '../../../models/proveedor.dart';
 //import '../../../widgets/export_button.dart';
 import '../../../services/export_helper.dart';
+import 'package:provider/provider.dart';
+import '../../../database/marca_repository.dart';
+import '../../../database/ubicacion_repository.dart';
+import '../../../models/marca.dart';
+import '../../../models/ubicacion.dart';
+import '../../../controllers/productos_filter_controller.dart';
+
 
 class ReporteDetallePage extends StatefulWidget {
   final String tipo;
@@ -32,6 +39,8 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
   final MovimientoRepository _movimientoRepo = MovimientoRepository();
   final CategoriaRepository _categoriaRepo = CategoriaRepository();
   final ProveedorRepository _proveedorRepo = ProveedorRepository();
+  final MarcaRepository _marcaRepo = MarcaRepository();
+  final UbicacionRepository _ubicacionRepo = UbicacionRepository();
 
   bool _isLoading = true;
   List<dynamic> _items = [];
@@ -64,6 +73,15 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
           break;
         case 'historial':
           await _cargarHistorial();
+          break;
+        case 'top_marcas':
+          await _cargarTopMarcas();
+          break;
+        case 'top_categorias':
+          await _cargarTopCategorias();
+          break;
+        case 'top_ubicaciones':
+          await _cargarTopUbicaciones();
           break;
       }
     } catch (e) {
@@ -194,6 +212,361 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
     _subtitulo = '${_items.length} movimientos registrados';
   }
 
+  // ==================== TOP MARCAS ====================
+  Future<void> _cargarTopMarcas() async {
+    final productos = await _productoRepo.getAll();
+    final marcas = await _marcaRepo.getAll();
+
+    final Map<int, List<Producto>> agrupados = {};
+    for (final p in productos) {
+      if (p.marcaId != null) {
+        agrupados.putIfAbsent(p.marcaId!, () => []).add(p);
+      }
+    }
+
+    final lista = <Map<String, dynamic>>[];
+    for (final marca in marcas) {
+      final prods = agrupados[marca.id] ?? [];
+      if (prods.isNotEmpty) {
+        final valor = prods.fold<double>(
+          0,
+          (sum, p) => sum + (p.stockActual * p.precioCompra),
+        );
+        lista.add({
+          'marca': marca,
+          'productos': prods,
+          'valor': valor,
+          'cantidad': prods.length,
+        });
+      }
+    }
+
+    // Ordenar por cantidad de productos (desc)
+    lista.sort((a, b) =>
+        (b['cantidad'] as int).compareTo(a['cantidad'] as int));
+
+    _items = lista;
+    _subtitulo = '${lista.length} marcas con productos';
+  }
+
+  // ==================== TOP CATEGORÍAS ====================
+  Future<void> _cargarTopCategorias() async {
+    final productos = await _productoRepo.getAll();
+    final categorias = await _categoriaRepo.getAll();
+
+    final Map<int, List<Producto>> agrupados = {};
+    for (final p in productos) {
+      if (p.categoriaId != null) {
+        agrupados.putIfAbsent(p.categoriaId!, () => []).add(p);
+      }
+    }
+
+    final lista = <Map<String, dynamic>>[];
+    for (final cat in categorias) {
+      final prods = agrupados[cat.id] ?? [];
+      if (prods.isNotEmpty) {
+        final valor = prods.fold<double>(
+          0,
+          (sum, p) => sum + (p.stockActual * p.precioCompra),
+        );
+        lista.add({
+          'categoria': cat,
+          'productos': prods,
+          'valor': valor,
+          'cantidad': prods.length,
+        });
+      }
+    }
+
+    lista.sort((a, b) =>
+        (b['cantidad'] as int).compareTo(a['cantidad'] as int));
+
+    _items = lista;
+    _subtitulo = '${lista.length} categorías con productos';
+  }
+
+  // ==================== TOP UBICACIONES ====================
+  Future<void> _cargarTopUbicaciones() async {
+    final productos = await _productoRepo.getAll();
+    final ubicaciones = await _ubicacionRepo.getAll();
+
+    final Map<int, List<Producto>> agrupados = {};
+    for (final p in productos) {
+      if (p.ubicacionId != null) {
+        agrupados.putIfAbsent(p.ubicacionId!, () => []).add(p);
+      }
+    }
+
+    final lista = <Map<String, dynamic>>[];
+    for (final ubic in ubicaciones) {
+      final prods = agrupados[ubic.id] ?? [];
+      if (prods.isNotEmpty) {
+        final valor = prods.fold<double>(
+          0,
+          (sum, p) => sum + (p.stockActual * p.precioCompra),
+        );
+        lista.add({
+          'ubicacion': ubic,
+          'productos': prods,
+          'valor': valor,
+          'cantidad': prods.length,
+        });
+      }
+    }
+
+    lista.sort((a, b) =>
+        (b['cantidad'] as int).compareTo(a['cantidad'] as int));
+
+    _items = lista;
+    _subtitulo = '${lista.length} ubicaciones con productos';
+  }
+
+    Widget _buildListaTop() {
+    final currencyFormat = NumberFormat.currency(
+      locale: 'es_AR',
+      symbol: '\$',
+      decimalDigits: 0,
+    );
+
+    // Encontrar el máximo para la barra de progreso
+    final maxCantidad = _items.isNotEmpty
+        ? _items.map((e) => (e as Map)['cantidad'] as int).reduce(
+              (a, b) => a > b ? a : b,
+            )
+        : 1;
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _items.length,
+      itemBuilder: (context, index) {
+        final item = _items[index] as Map<String, dynamic>;
+        final cantidad = item['cantidad'] as int;
+        final valor = item['valor'] as double;
+
+        // 🔥 Determinar entidad y nombre
+        String nombre;
+        IconData icono;
+        MaterialColor colorBase;   // 🔥 MaterialColor en lugar de Color
+
+        if (widget.tipo == 'top_marcas') {
+          final marca = item['marca'] as Marca;
+          nombre = marca.nombre;
+          icono = Icons.local_offer;
+          colorBase = Colors.teal;        // ✅ MaterialColor
+        } else if (widget.tipo == 'top_categorias') {
+          final cat = item['categoria'] as Categoria;
+          nombre = cat.nombre;
+          icono = Icons.category;
+          colorBase = Colors.purple;      // ✅ MaterialColor
+        } else {
+          final ubic = item['ubicacion'] as Ubicacion;
+          nombre = ubic.nombreCompleto;
+          icono = Icons.location_on;
+          colorBase = Colors.indigo;      // ✅ MaterialColor
+        }
+
+        final medalla = _getMedalla(index);
+        final porcentaje = cantidad / maxCantidad;
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: InkWell(
+            onTap: () => _filtrarEnProductos(item),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      // Medalla o número
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: medalla != null
+                              ? _getColorMedalla(index).withValues(alpha: 0.15)
+                              : colorBase.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: medalla != null
+                              ? Text(medalla, style: const TextStyle(fontSize: 20))
+                              : Text(
+                                  '${index + 1}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: colorBase.shade700,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+
+                      // Nombre
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(icono, size: 14, color: colorBase.shade700),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    nombre,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Text(
+                                  '$cantidad producto${cantidad != 1 ? "s" : ""}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  width: 3,
+                                  height: 3,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade400,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  currencyFormat.format(valor),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 14,
+                        color: Colors.grey.shade400,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Barra de progreso
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: porcentaje,
+                      minHeight: 6,
+                      backgroundColor: colorBase.shade50,
+                      valueColor: AlwaysStoppedAnimation(colorBase.shade700),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /*
+  String? _nombrePadre(Categoria cat) {
+    if (cat.categoriaPadreId == null) return null;
+    // No tenemos acceso directo a _categorias aquí, mostramos solo el nombre
+    return null;
+  }
+  */
+
+  String? _getMedalla(int index) {
+    if (index == 0) return '🥇';
+    if (index == 1) return '🥈';
+    if (index == 2) return '🥉';
+    return null;
+  }
+
+  Color _getColorMedalla(int index) {
+    if (index == 0) return const Color(0xFFFFD700); // Oro
+    if (index == 1) return const Color(0xFFC0C0C0); // Plata
+    if (index == 2) return const Color(0xFFCD7F32); // Bronce
+    return Colors.grey;
+  }
+
+  void _filtrarEnProductos(Map<String, dynamic> item) {
+    final controller = context.read<ProductosFilterController>();
+
+    if (widget.tipo == 'top_marcas') {
+      final marca = item['marca'] as Marca;
+      controller.filtrarPorMarca(marca.id!);
+    } else if (widget.tipo == 'top_categorias') {
+      final cat = item['categoria'] as Categoria;
+      controller.filtrarPorCategoria(cat.id!);
+    } else {
+      final ubic = item['ubicacion'] as Ubicacion;
+      controller.filtrarPorUbicacion(ubic.id!);
+    }
+
+    // Cerrar el detalle del reporte
+    Navigator.pop(context);
+  }
+
+  Map<String, dynamic> _prepararDatosTop() {
+    final headers = [
+      'Posición',
+      widget.tipo == 'top_marcas'
+          ? 'Marca'
+          : widget.tipo == 'top_categorias'
+              ? 'Categoría'
+              : 'Ubicación',
+      'Productos',
+      'Valor Stock',
+    ];
+
+    final rows = <List<String>>[];
+    for (int i = 0; i < _items.length; i++) {
+      final item = _items[i] as Map<String, dynamic>;
+      String nombre;
+
+      if (widget.tipo == 'top_marcas') {
+        nombre = (item['marca'] as Marca).nombre;
+      } else if (widget.tipo == 'top_categorias') {
+        nombre = (item['categoria'] as Categoria).nombre;
+      } else {
+        nombre = (item['ubicacion'] as Ubicacion).nombreCompleto;
+      }
+
+      rows.add([
+        '${i + 1}',
+        nombre,
+        (item['cantidad'] as int).toString(),
+        (item['valor'] as double).toStringAsFixed(2),
+      ]);
+    }
+
+    return {'headers': headers, 'rows': rows};
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -267,6 +640,10 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
         return _buildListaAgrupada('proveedor');
       case 'historial':
         return _buildListaHistorial();
+      case 'top_marcas':
+      case 'top_categorias':
+      case 'top_ubicaciones':
+        return _buildListaTop();
       default:
         return const SizedBox();
     }
@@ -573,6 +950,10 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
         return _prepararDatosAgrupados();
       case 'historial':
         return _prepararDatosHistorial();
+      case 'top_marcas':
+      case 'top_categorias':
+      case 'top_ubicaciones':
+        return _prepararDatosTop();
       default:
         return null;
     }
