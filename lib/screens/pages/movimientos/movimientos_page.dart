@@ -76,9 +76,13 @@ class _MovimientosPageState extends State<MovimientosPage> {
       resultado = resultado.where((m) => m.tipo == _filtroTipo).toList();
     } else if (_filtroTipo == 'ajustes') {
       // Ajustes = movimientos cuyo motivo sea sobrante o faltante de inventario
-      resultado = resultado.where((m) =>
-          m.motivo == 'sobrante_inventario' ||
-          m.motivo == 'faltante_inventario').toList();
+      resultado = resultado
+          .where(
+            (m) =>
+                m.motivo == 'sobrante_inventario' ||
+                m.motivo == 'faltante_inventario',
+          )
+          .toList();
     }
     // 'todos' → no filtra
 
@@ -157,7 +161,11 @@ class _MovimientosPageState extends State<MovimientosPage> {
                   color: Colors.amber.shade50,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.history, color: Colors.amber.shade700, size: 28),
+                child: Icon(
+                  Icons.history,
+                  color: Colors.amber.shade700,
+                  size: 28,
+                ),
               ),
               const SizedBox(width: 16),
               Column(
@@ -184,8 +192,15 @@ class _MovimientosPageState extends State<MovimientosPage> {
               ExportButton(
                 titulo: 'Movimientos',
                 headers: const [
-                  'ID', 'Producto', 'Tipo', 'Cantidad', 'Precio Unit.',
-                  'Total', 'Motivo', 'Fecha', 'Factura',
+                  'ID',
+                  'Producto',
+                  'Tipo',
+                  'Cantidad',
+                  'Precio Unit.',
+                  'Total',
+                  'Motivo',
+                  'Fecha',
+                  'Factura',
                 ],
                 rows: _filtered.map((m) {
                   final producto = _productosMap[m.productoId];
@@ -216,8 +231,10 @@ class _MovimientosPageState extends State<MovimientosPage> {
               ),
             ),
             icon: const Icon(Icons.add),
-            label: const Text('Registrar Movimiento',
-                style: TextStyle(fontWeight: FontWeight.w600)),
+            label: const Text(
+              'Registrar Movimiento',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -227,16 +244,34 @@ class _MovimientosPageState extends State<MovimientosPage> {
   Widget _buildFiltros() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Row(
-        children: [
-          _buildFilterChip('Todos', 'todos', Icons.list),
-          const SizedBox(width: 8),
-          _buildFilterChip('Entradas', 'entrada', Icons.arrow_downward, Colors.green),
-          const SizedBox(width: 8),
-          _buildFilterChip('Salidas', 'salida', Icons.arrow_upward, Colors.red),
-          const SizedBox(width: 8),
-          _buildFilterChip('Ajustes de Inventario', 'ajustes', Icons.tune, Colors.orange),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildFilterChip('Todos', 'todos', Icons.list),
+            const SizedBox(width: 8),
+            _buildFilterChip(
+              'Entradas',
+              'entrada',
+              Icons.arrow_downward,
+              Colors.green,
+            ),
+            const SizedBox(width: 8),
+            _buildFilterChip(
+              'Salidas',
+              'salida',
+              Icons.arrow_upward,
+              Colors.red,
+            ),
+            const SizedBox(width: 8),
+            _buildFilterChip(
+              'Ajustes de Inventario',
+              'ajustes',
+              Icons.tune,
+              Colors.orange,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -249,33 +284,46 @@ class _MovimientosPageState extends State<MovimientosPage> {
   ]) {
     final isSelected = _filtroTipo == value;
     final baseColor = color ?? Colors.amber;
-    return FilterChip(
-      selected: isSelected,
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: isSelected ? Colors.white : baseColor.shade700,
+
+    return Material(
+      color: isSelected ? baseColor.shade700 : Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: () {
+          setState(() => _filtroTipo = value);
+          _aplicarFiltros();
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? baseColor.shade700 : Colors.grey.shade300,
+            ),
           ),
-          const SizedBox(width: 6),
-          Text(label),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? Colors.white : Colors.grey.shade700,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isSelected ? Colors.white : Colors.grey.shade700,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
-      selectedColor: baseColor.shade700,
-      backgroundColor: Colors.white,
-      side: BorderSide(
-        color: isSelected ? baseColor.shade700 : Colors.grey.shade300,
-      ),
-      onSelected: (selected) {
-        setState(() => _filtroTipo = value);
-        _aplicarFiltros();
-      },
     );
   }
 
@@ -287,7 +335,11 @@ class _MovimientosPageState extends State<MovimientosPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history_toggle_off, size: 80, color: Colors.grey.shade300),
+            Icon(
+              Icons.history_toggle_off,
+              size: 80,
+              color: Colors.grey.shade300,
+            ),
             const SizedBox(height: 16),
             Text(
               _searchController.text.isEmpty && _filtroTipo == 'todos'
@@ -387,7 +439,11 @@ class _MovimientoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _getTipoColor();
-    final currencyFormat = NumberFormat.currency(locale: 'es_AR', symbol: '\$', decimalDigits: 0);
+    final currencyFormat = NumberFormat.currency(
+      locale: 'es_AR',
+      symbol: '\$',
+      decimalDigits: 0,
+    );
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
     return Card(
@@ -432,7 +488,10 @@ class _MovimientoCard extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: color.shade50,
                             borderRadius: BorderRadius.circular(4),
@@ -451,7 +510,10 @@ class _MovimientoCard extends StatelessWidget {
                         if (_esAjusteInventario) ...[
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.orange.shade50,
                               borderRadius: BorderRadius.circular(4),
@@ -483,7 +545,10 @@ class _MovimientoCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       dateFormat.format(movimiento.fecha),
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                      ),
                     ),
                   ],
                 ),
@@ -525,16 +590,25 @@ class _MovimientoCard extends StatelessWidget {
                     if (movimiento.precioUnitario > 0) ...[
                       Text(
                         'Precio unit.',
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                       Text(
                         currencyFormat.format(movimiento.precioUnitario),
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade700,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Total',
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                       Text(
                         currencyFormat.format(movimiento.total),
@@ -547,7 +621,10 @@ class _MovimientoCard extends StatelessWidget {
                     ] else
                       Text(
                         'Sin precio',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade400,
+                        ),
                       ),
                   ],
                 ),

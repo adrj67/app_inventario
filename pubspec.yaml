@@ -10,6 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
   
+  shared_preferences: ^2.3.0
+  window_manager: ^0.4.2
+
   # BASE DE DATOS
   sqflite: ^2.3.0
   sqflite_common_ffi: ^2.3.0

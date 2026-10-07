@@ -254,19 +254,22 @@ class _PresupuestosPageState extends State<PresupuestosPage> {
     );
   }
 
-  Widget _buildFiltros() {
+    Widget _buildFiltros() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Row(
-        children: [
-          _buildFilterChip('Todos', 'todos', Icons.list),
-          const SizedBox(width: 8),
-          _buildFilterChip('Pendientes', 'pendiente', Icons.schedule, Colors.orange),
-          const SizedBox(width: 8),
-          _buildFilterChip('Aprobados', 'aprobado', Icons.check_circle, Colors.green),
-          const SizedBox(width: 8),
-          _buildFilterChip('Rechazados', 'rechazado', Icons.cancel, Colors.red),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildFilterChip('Todos', 'todos', Icons.list),
+            const SizedBox(width: 8),
+            _buildFilterChip('Pendientes', 'pendiente', Icons.schedule, Colors.orange),
+            const SizedBox(width: 8),
+            _buildFilterChip('Aprobados', 'aprobado', Icons.check_circle, Colors.green),
+            const SizedBox(width: 8),
+            _buildFilterChip('Rechazados', 'rechazado', Icons.cancel, Colors.red),
+          ],
+        ),
       ),
     );
   }
@@ -274,27 +277,46 @@ class _PresupuestosPageState extends State<PresupuestosPage> {
   Widget _buildFilterChip(String label, String value, IconData icon, [MaterialColor? color]) {
     final isSelected = _filtroEstado == value;
     final baseColor = color ?? Colors.deepOrange;
-    return FilterChip(
-      selected: isSelected,
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: isSelected ? Colors.white : baseColor.shade700),
-          const SizedBox(width: 6),
-          Text(label),
-        ],
+
+    return Material(
+      color: isSelected ? baseColor.shade700 : Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: () {
+          setState(() => _filtroEstado = value);
+          _aplicarFiltros();
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? baseColor.shade700 : Colors.grey.shade300,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? Colors.white : Colors.grey.shade700,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isSelected ? Colors.white : Colors.grey.shade700,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
-      selectedColor: baseColor.shade700,
-      backgroundColor: Colors.white,
-      side: BorderSide(color: isSelected ? baseColor.shade700 : Colors.grey.shade300),
-      onSelected: (selected) {
-        setState(() => _filtroEstado = value);
-        _aplicarFiltros();
-      },
     );
   }
 

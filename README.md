@@ -41,3 +41,14 @@ El ejecutable queda en:
 text
 build\windows\x64\runner\Release\app_inventario_flutter.exe
 Ese .exe se puede copiar a cualquier PC con Windows y funciona (aunque necesita los archivos .dll de la misma carpeta Release).
+
+==============================================================================
+
+BORRAR FECHA PARA DEMO:
+Remove-Item "$env:APPDATA\com.example\app_inventario_flutter\shared_preferences.json" -ErrorAction SilentlyContinue
+
+# Build DEMO (con límite de 7 días)
+flutter build windows --dart-define=IS_DEMO=true
+
+# Build FULL (sin límite)
+flutter build windows --dart-define=IS_DEMO=false
