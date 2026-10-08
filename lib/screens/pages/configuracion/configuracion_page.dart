@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../database/configuracion_repository.dart';
 import '../../../models/configuracion.dart';
+import 'package:intl/intl.dart';
+import '../../../services/backup_service.dart';
+import 'dart:io';
 
 class ConfiguracionPage extends StatefulWidget {
   const ConfiguracionPage({super.key});
@@ -26,6 +29,13 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   bool _isLoading = true;
   bool _guardando = false;
 
+  // 🔥 NUEVO: Info de backups
+  DateTime? _ultimoBackup;
+  int _cantidadBackups = 0;
+  String _rutaBackups = '';
+  bool _cargandoBackups = true;
+  bool _creandoBackup = false;
+
   final List<String> _condicionesIva = [
     'Responsable Inscripto',
     'Monotributo',
@@ -38,6 +48,416 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   void initState() {
     super.initState();
     _cargarConfiguracion();
+    _cargarInfoBackups(); 
+  }
+
+  Future<void> _cargarInfoBackups() async {
+    setState(() => _cargandoBackups = true);
+    try {
+      final ultimo = await BackupService.obtenerFechaUltimoBackup();
+      final cantidad = await BackupService.contarBackups();
+      final ruta = await BackupService.obtenerRutaBackups();
+
+      // 🔥 DEBUG TEMPORAL
+      debugPrint('=== INFO BACKUPS ===');
+      debugPrint('Último: $ultimo');
+      debugPrint('Cantidad: $cantidad');
+      debugPrint('Ruta: $ruta');
+
+      // 🔥 DEBUG: listar archivos directamente
+      final dir = Directory(ruta);
+      if (await dir.exists()) {
+        final archivos = dir.listSync();
+        debugPrint('Archivos en la carpeta: ${archivos.length}');
+        for (final a in archivos) {
+          debugPrint('  - ${a.path.split(Platform.pathSeparator).last}');
+        }
+      } else {
+        debugPrint('⚠️ La carpeta NO existe: $ruta');
+      }
+      debugPrint('====================');
+
+      if (!mounted) return;
+      setState(() {
+        _ultimoBackup = ultimo;
+        _cantidadBackups = cantidad;
+        _rutaBackups = ruta;
+        _cargandoBackups = false;
+      });
+    } catch (e) {
+      debugPrint('Error cargando info de backups: $e');
+      if (mounted) setState(() => _cargandoBackups = false);
+    }
+  }
+
+  Widget _buildCardBackups() {
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+
+    return _buildCard(
+      titulo: 'Backup y Restauración',
+      icono: Icons.backup,
+      children: [
+        if (_cargandoBackups)
+          const Padding(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else ...[
+          // Info del último backup
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _ultimoBackup != null ? Colors.green.shade50 : Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: _ultimoBackup != null ? Colors.green.shade200 : Colors.orange.shade200,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _ultimoBackup != null ? Icons.check_circle : Icons.warning_amber,
+                  color: _ultimoBackup != null ? Colors.green.shade700 : Colors.orange.shade700,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _ultimoBackup != null
+                            ? 'Último backup: ${dateFormat.format(_ultimoBackup!)}'
+                            : 'Sin backups todavía',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _ultimoBackup != null
+                              ? Colors.green.shade900
+                              : Colors.orange.shade900,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$_cantidadBackups backup${_cantidadBackups != 1 ? "s" : ""} disponible${_cantidadBackups != 1 ? "s" : ""} · Se mantienen los últimos 7',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Botones
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _creandoBackup ? null : _crearBackupManual,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: _creandoBackup
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.backup),
+                  label: Text(
+                    _creandoBackup ? 'Creando...' : 'Crear backup ahora',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _cantidadBackups == 0 ? null : _mostrarSelectorBackups,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.blue.shade700,
+                    side: BorderSide(color: Colors.blue.shade700),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(Icons.restore),
+                  label: const Text(
+                    'Restaurar backup',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Info de la ruta
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.folder, size: 16, color: Colors.blue.shade700),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Carpeta de backups',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue.shade900,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      SelectableText(
+                        _rutaBackups,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.blue.shade900,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Aviso
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.amber.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, size: 16, color: Colors.amber.shade700),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'El backup automático se ejecuta una vez cada 24 horas. '
+                    'Al restaurar, se reemplazan TODOS los datos actuales.',
+                    style: TextStyle(fontSize: 11, color: Colors.amber.shade900),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+    // ==================== CREAR BACKUP ====================
+
+  Future<void> _crearBackupManual() async {
+    setState(() => _creandoBackup = true);
+
+    try {
+      final archivo = await BackupService.crearBackup();
+
+      if (!mounted) return;
+      await _cargarInfoBackups();
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('Backup creado: ${archivo.path.split('/').last}'),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green.shade700,
+          behavior: SnackBarBehavior.floating,
+          width: 500,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al crear backup: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _creandoBackup = false);
+    }
+  }
+
+  // ==================== RESTAURAR BACKUP ====================
+
+  Future<void> _mostrarSelectorBackups() async {
+    debugPrint('=== INICIANDO _mostrarSelectorBackups ===');
+
+    final backups = await BackupService.listarBackups();
+
+    debugPrint('Backups encontrados: ${backups.length}');
+
+    if (!mounted) return;
+
+    if (backups.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No hay backups disponibles'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+
+    final seleccionado = await showDialog<BackupInfo>(
+      context: context,
+      builder: (context) => _SelectorBackupDialog(backups: backups),
+    );
+
+    if (seleccionado == null) return;
+    if (!mounted) return;
+
+    //if (seleccionado == null) return;
+
+    // Confirmar restauración
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.red.shade700, size: 28),
+            const SizedBox(width: 12),
+            const Text('Confirmar restauración'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '¿Restaurar el backup del ${DateFormat('dd/MM/yyyy HH:mm').format(seleccionado.fecha)}?',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.red.shade700, size: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'TODOS los datos actuales serán reemplazados. '
+                      'Se creará un backup del estado actual antes de restaurar.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.restore, size: 18),
+            label: const Text('Restaurar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    // Ejecutar restauración
+    try {
+      await BackupService.restaurarBackup(seleccionado.archivo);
+
+      if (!mounted) return;
+
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green.shade700, size: 28),
+              const SizedBox(width: 12),
+              const Text('Backup restaurado'),
+            ],
+          ),
+          content: const Text(
+            'Los datos fueron restaurados correctamente.\n\n'
+            'Cerrá y volvé a abrir la aplicación para ver los cambios.',
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade700,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Entendido'),
+            ),
+          ],
+        ),
+      );
+
+      // Recargar info
+      await _cargarInfoBackups();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al restaurar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -96,6 +516,8 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                         _buildCardContacto(),
                         const SizedBox(height: 16),
                         _buildCardExtras(),
+                        const SizedBox(height: 24),
+                        _buildCardBackups(),
                         const SizedBox(height: 24),
                         _buildBotones(),
                       ],
@@ -446,5 +868,216 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   String? _textoONull(String texto) {
     final t = texto.trim();
     return t.isEmpty ? null : t;
+  }
+}
+
+// ==================== DIÁLOGO SELECTOR DE BACKUP ====================
+
+class _SelectorBackupDialog extends StatefulWidget {
+  final List<BackupInfo> backups;
+
+  const _SelectorBackupDialog({required this.backups});
+
+  @override
+  State<_SelectorBackupDialog> createState() => _SelectorBackupDialogState();
+}
+
+class _SelectorBackupDialogState extends State<_SelectorBackupDialog> {
+  BackupInfo? _seleccionado;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.backups.isNotEmpty) {
+      _seleccionado = widget.backups.first;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 550,
+        constraints: const BoxConstraints(maxHeight: 600),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Icon(Icons.restore, color: Colors.blue.shade700, size: 28),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Seleccionar backup',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${widget.backups.length} backup${widget.backups.length != 1 ? "s" : ""} disponible${widget.backups.length != 1 ? "s" : ""}',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 16),
+
+            // Lista
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: widget.backups.length,
+                itemBuilder: (context, index) {
+                  final backup = widget.backups[index];
+                  final isSelected = _seleccionado?.archivo.path == backup.archivo.path;
+                  final esReciente = index == 0;
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.blue.shade50 : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected ? Colors.blue.shade700 : Colors.grey.shade200,
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: InkWell(
+                      onTap: () => setState(() => _seleccionado = backup),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              isSelected
+                                  ? Icons.radio_button_checked
+                                  : Icons.radio_button_unchecked,
+                              color: isSelected
+                                  ? Colors.blue.shade700
+                                  : Colors.grey.shade400,
+                              size: 20,
+                            ),
+                            Icon(
+                              Icons.description,
+                              color: isSelected
+                                  ? Colors.blue.shade700
+                                  : Colors.grey.shade600,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        dateFormat.format(backup.fecha),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                          color: isSelected
+                                              ? Colors.blue.shade900
+                                              : Colors.grey.shade800,
+                                        ),
+                                      ),
+                                      if (esReciente) ...[
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green.shade700,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Text(
+                                            'MÁS RECIENTE',
+                                            style: TextStyle(
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${backup.tamanioFormateado} · ${backup.nombreArchivo}',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.grey.shade600,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Botones
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: _seleccionado == null
+                        ? null
+                        : () => Navigator.pop(context, _seleccionado),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    icon: const Icon(Icons.check, size: 18),
+                    label: const Text(
+                      'Seleccionar',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

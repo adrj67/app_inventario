@@ -17,6 +17,7 @@ import '../services/demo_service.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import '../services/backup_service.dart';
 
 
 class MainLayout extends StatefulWidget {
@@ -66,6 +67,40 @@ class _MainLayoutState extends State<MainLayout> {
       });
     } else {
       setState(() => _cargandoDemo = false);
+    }
+
+    // 🔥 NUEVO: Backup automático
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _verificarBackupAutomatico();
+    });
+  }
+
+  /// Verifica si hay que hacer backup automático (pasadas las 24hs)
+  Future<void> _verificarBackupAutomatico() async {
+    try {
+      final hizoBackup = await BackupService.ejecutarBackupAutomatico();
+
+      if (hizoBackup && mounted) {
+        // Mostrar confirmación discreta
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.backup, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text('Backup automático creado correctamente'),
+              ],
+            ),
+            backgroundColor: Colors.green.shade700,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            width: 400,
+          ),
+        );
+      }
+    } catch (e) {
+      // Si falla, no molestar al usuario
+      debugPrint('Error en backup automático: $e');
     }
   }
 
