@@ -23,17 +23,13 @@ class DatabaseHelper {
   Future<Database> _initDatabase() async {
     final directory = await getApplicationDocumentsDirectory();
     final path = join(directory.path, 'inventario.db');
-    
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _onCreate,
-    );
+
+    return await openDatabase(path, version: 1, onCreate: _onCreate);
   }
 
-    Future<void> _onCreate(Database db, int version) async {
-      // ==================== PROVEEDORES ====================
-      await db.execute('''
+  Future<void> _onCreate(Database db, int version) async {
+    // ==================== PROVEEDORES ====================
+    await db.execute('''
         CREATE TABLE proveedores(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           nombre TEXT NOT NULL,
@@ -49,8 +45,8 @@ class DatabaseHelper {
         )
       ''');
 
-      // ==================== PRODUCTOS ====================
-      await db.execute('''
+    // ==================== PRODUCTOS ====================
+    await db.execute('''
         CREATE TABLE productos(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           sku TEXT NOT NULL,
@@ -85,8 +81,8 @@ class DatabaseHelper {
         )
       ''');
 
-       // ==================== CATEGORIAS ====================
-      await db.execute('''
+    // ==================== CATEGORIAS ====================
+    await db.execute('''
         CREATE TABLE categorias(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           nombre TEXT NOT NULL,
@@ -98,8 +94,8 @@ class DatabaseHelper {
         )
       ''');
 
-      // ==================== MARCAS ====================
-      await db.execute('''
+    // ==================== MARCAS ====================
+    await db.execute('''
         CREATE TABLE marcas(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           nombre TEXT NOT NULL,
@@ -110,8 +106,8 @@ class DatabaseHelper {
         )
       ''');
 
-        // ==================== UBICACIONES ====================
-        await db.execute('''
+    // ==================== UBICACIONES ====================
+    await db.execute('''
           CREATE TABLE ubicaciones(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             deposito TEXT NOT NULL,
@@ -126,8 +122,8 @@ class DatabaseHelper {
           )
         ''');
 
-        // ==================== CLIENTES ====================
-        await db.execute('''
+    // ==================== CLIENTES ====================
+    await db.execute('''
           CREATE TABLE clientes(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL,
@@ -143,8 +139,8 @@ class DatabaseHelper {
           )
         ''');
 
-        // ==================== MOVIMIENTOS ====================
-        await db.execute('''
+    // ==================== MOVIMIENTOS ====================
+    await db.execute('''
           CREATE TABLE movimientos(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             productoId INTEGER NOT NULL,
@@ -160,8 +156,8 @@ class DatabaseHelper {
           )
         ''');
 
-        // ==================== CONFIGURACIÓN ====================
-        await db.execute('''
+    // ==================== CONFIGURACIÓN ====================
+    await db.execute('''
           CREATE TABLE configuracion(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombreEmpresa TEXT NOT NULL,
@@ -177,8 +173,8 @@ class DatabaseHelper {
           )
         ''');
 
-        // ==================== PRESUPUESTOS ====================
-        await db.execute('''
+    // ==================== PRESUPUESTOS ====================
+    await db.execute('''
           CREATE TABLE presupuestos(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             numero TEXT NOT NULL,
@@ -196,7 +192,7 @@ class DatabaseHelper {
           )
         ''');
 
-        await db.execute('''
+    await db.execute('''
           CREATE TABLE presupuesto_items(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             presupuestoId INTEGER NOT NULL,
@@ -210,8 +206,8 @@ class DatabaseHelper {
           )
         ''');
 
-        // ==================== HISTORIAL DE PRECIOS ====================
-        await db.execute('''
+    // ==================== HISTORIAL DE PRECIOS ====================
+    await db.execute('''
           CREATE TABLE historial_precios(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             productoId INTEGER NOT NULL,
@@ -224,295 +220,189 @@ class DatabaseHelper {
           )
         ''');
 
-      // ==================== DATOS DE EJEMPLO ====================
-      final now = DateTime.now().toIso8601String();  // 🔥 SOLO UNA VEZ
-      
-      // Proveedores de ejemplo
-      await db.insert('proveedores', {
-        'nombre': 'Gonzalez Hnos SRL',
-        'cuit': '30-12345678-9',
-        'telefono': '+54 11 1234-5678',
-        'email': 'ventas@gonzalezhnos.com.ar',
-        'direccion': 'Av. Corrientes 1234, CABA',
-        'contacto': 'Juan Gonzalez',
-        'nota': 'Proveedor principal de electrónicos',
-        'activo': 1,
+    // ==================== DATOS DE EJEMPLO ====================
+    final now = DateTime.now().toIso8601String(); // SOLO UNA VEZ
+
+    // ----- CONFIGURACIÓN (1) -----
+    await db.insert('configuracion', {
+      'nombreEmpresa': 'Mi Empresa SRL',
+      'cuit': '30-12345678-9',
+      'direccion': 'Av. Corrientes 1234, CABA',
+      'telefono': '+54 11 1234-5678',
+      'email': 'contacto@miempresa.com.ar',
+      'sitioWeb': 'www.miempresa.com.ar',
+      'condicionIva': 'Responsable Inscripto',
+      'logoPath': null,
+      'observaciones': 'Configurá los datos de tu empresa desde esta pantalla.',
+      'fechaModificacion': now,
+    });
+
+    // ----- PROVEEDORES (1) -----
+    await db.insert('proveedores', {
+      'nombre': 'Proveedor de Ejemplo SRL',
+      'cuit': '30-11111111-1',
+      'telefono': '+54 11 4444-5555',
+      'email': 'ventas@proveedor-ejemplo.com',
+      'direccion': 'Av. Belgrano 500, CABA',
+      'contacto': 'Juan Pérez',
+      'nota': 'Registro de ejemplo. Podés editarlo o eliminarlo.',
+      'activo': 1,
+      'fechaCreacion': now,
+      'fechaModificacion': now,
+    });
+
+    // ----- CATEGORÍAS (4 - con jerarquía) -----
+    // Raíces
+    await db.insert('categorias', {
+      'nombre': 'Electrónica',
+      'descripcion': 'Productos electrónicos en general',
+      'categoriaPadreId': null,
+      'activa': 1,
+      'fechaCreacion': now,
+      'fechaModificacion': now,
+    });
+    await db.insert('categorias', {
+      'nombre': 'Electrodomésticos',
+      'descripcion': 'Línea blanca y pequeños electrodomésticos',
+      'categoriaPadreId': null,
+      'activa': 1,
+      'fechaCreacion': now,
+      'fechaModificacion': now,
+    });
+    // Subcategorías (dependen de las raíces)
+    await db.insert('categorias', {
+      'nombre': 'Celulares',
+      'descripcion': 'Smartphones y accesorios',
+      'categoriaPadreId': 1, // Electrónica
+      'activa': 1,
+      'fechaCreacion': now,
+      'fechaModificacion': now,
+    });
+    await db.insert('categorias', {
+      'nombre': 'Lavarropas',
+      'descripcion': 'Lavadoras automáticas',
+      'categoriaPadreId': 2, // Electrodomésticos
+      'activa': 1,
+      'fechaCreacion': now,
+      'fechaModificacion': now,
+    });
+
+    // ----- MARCAS (3) -----
+    final marcas = [
+      {'nombre': 'Samsung', 'descripcion': 'Electrónica coreana'},
+      {'nombre': 'LG', 'descripcion': 'Electrónica coreana'},
+      {'nombre': 'Drean', 'descripcion': 'Electrodomésticos argentinos'},
+    ];
+    for (final marca in marcas) {
+      await db.insert('marcas', {
+        ...marca,
+        'activa': 1,
         'fechaCreacion': now,
-        'fechaModificacion': now,
-      });
-
-      await db.insert('proveedores', {
-        'nombre': 'PH Mayorista SA',
-        'cuit': '30-87654321-9',
-        'telefono': '+54 11 9876-5432',
-        'email': 'info@phmayorista.com',
-        'direccion': 'Calle Falsa 123, CABA',
-        'contacto': 'Maria Perez',
-        'nota': 'Proveedor de electrodomésticos',
-        'activo': 1,
-        'fechaCreacion': now,
-        'fechaModificacion': now,
-      });
-
-      await db.insert('proveedores', {
-        'nombre': 'Desconocido',
-        'cuit': '30-99999999-9',
-        'telefono': '+54 223 555-5432',
-        'email': 'desconocido@phmayorista.com',
-        'direccion': 'Calle Falsa 123, Mar del Plata',
-        'contacto': 'Desconocido',
-        'nota': 'Proveedor de electrodomésticos',
-        'activo': 1,
-        'fechaCreacion': now,
-        'fechaModificacion': now,
-      });
-
-      // 🔥 Productos de ejemplo 
-      final productosEjemplo = [
-        {
-          'sku': 'CEL-SAM-A17-001',
-          'codigoBarras': '7891234567890',
-          'nombre': 'Samsung Galaxy A17',
-          'descripcion': 'Smartphone 128GB, 6GB RAM',
-          'categoriaId': 1,
-          'marcaId': 1,
-          'proveedorId': 1,
-          'modelo': 'A17',
-          'stockActual': 15,
-          'stockMinimo': 5,
-          'stockMaximo': 50,
-          'precioCompra': 180000.0,
-          'precioVenta': 250000.0,
-          'fechaCompra': now,
-          'estaActivo': 1,
-          'estaDisponible': 1,
-          'estado': 'en_stock',
-          'fechaCreacion': now,
-          'fechaUltimaModificacion': now,
-        },
-        {
-          'sku': 'LAV-DRE-SW120-001',
-          'codigoBarras': '7891234567891',
-          'nombre': 'Lavarropas Drean Next 8kg',
-          'descripcion': 'Lavarropas automático 8kg',
-          'categoriaId': 2,
-          'marcaId': 2,
-          'proveedorId': 2,
-          'modelo': 'SW120PN',
-          'stockActual': 3,
-          'stockMinimo': 5,
-          'stockMaximo': 20,
-          'precioCompra': 450000.0,
-          'precioVenta': 620000.0,
-          'fechaCompra': now,
-          'estaActivo': 1,
-          'estaDisponible': 1,
-          'estado': 'en_stock',
-          'fechaCreacion': now,
-          'fechaUltimaModificacion': now,
-        },
-        {
-          'sku': 'COL-SUA-2P-001',
-          'codigoBarras': '7891234567892',
-          'nombre': 'Colchón Suavestar 2 Plazas',
-          'descripcion': 'Colchón resortes 2 plazas',
-          'categoriaId': 3,
-          'marcaId': 3,
-          'proveedorId': 1,
-          'modelo': 'Confort',
-          'stockActual': 0,
-          'stockMinimo': 3,
-          'stockMaximo': 15,
-          'precioCompra': 220000.0,
-          'precioVenta': 320000.0,
-          'fechaCompra': now,
-          'estaActivo': 1,
-          'estaDisponible': 1,
-          'estado': 'agotado',
-          'fechaCreacion': now,
-          'fechaUltimaModificacion': now,
-        },
-        {
-          'sku': 'AUR-JBL-TUNE-001',
-          'codigoBarras': '7891234567893',
-          'nombre': 'Auriculares JBL Tune 510BT',
-          'descripcion': 'Auriculares inalámbricos',
-          'categoriaId': 1,
-          'marcaId': 4,
-          'proveedorId': 1,
-          'modelo': 'Tune 510BT',
-          'stockActual': 25,
-          'stockMinimo': 10,
-          'stockMaximo': 100,
-          'precioCompra': 45000.0,
-          'precioVenta': 72000.0,
-          'fechaCompra': now,
-          'estaActivo': 1,
-          'estaDisponible': 1,
-          'estado': 'en_stock',
-          'fechaCreacion': now,
-          'fechaUltimaModificacion': now,
-        },
-        {
-          'sku': 'TAB-LEN-M10-001',
-          'codigoBarras': '7891234567894',
-          'nombre': 'Tablet Lenovo M10',
-          'descripcion': 'Tablet 10" 64GB',
-          'categoriaId': 1,
-          'marcaId': 5,
-          'proveedorId': 2,
-          'modelo': 'M10',
-          'stockActual': 8,
-          'stockMinimo': 5,
-          'stockMaximo': 30,
-          'precioCompra': 150000.0,
-          'precioVenta': 210000.0,
-          'fechaCompra': now,
-          'estaActivo': 1,
-          'estaDisponible': 1,
-          'estado': 'en_stock',
-          'fechaCreacion': now,
-          'fechaUltimaModificacion': now,
-        },
-      ];
-
-      for (final producto in productosEjemplo) {
-        await db.insert('productos', producto);
-      }
-
-      // Categorías de ejemplo
-      final categoriasEjemplo = [
-        {'nombre': 'Electrónica', 'descripcion': 'Productos electrónicos', 'categoriaPadreId': null},
-        {'nombre': 'Celulares', 'descripcion': 'Smartphones y accesorios', 'categoriaPadreId': 1},
-        {'nombre': 'Smartphones', 'descripcion': 'Teléfonos inteligentes', 'categoriaPadreId': 2},
-        {'nombre': 'Accesorios', 'descripcion': 'Fundas, cargadores', 'categoriaPadreId': 2},
-        {'nombre': 'Electrodomésticos', 'descripcion': 'Línea blanca', 'categoriaPadreId': null},
-        {'nombre': 'Lavarropas', 'descripcion': 'Lavadoras', 'categoriaPadreId': 5},
-        {'nombre': 'Heladeras', 'descripcion': 'Refrigeradores', 'categoriaPadreId': 5},
-        {'nombre': 'Muebles', 'descripcion': 'Mobiliario', 'categoriaPadreId': null},
-        {'nombre': 'Colchones', 'descripcion': 'Colchones y sommiers', 'categoriaPadreId': 8},
-      ];
-
-      for (final cat in categoriasEjemplo) {
-        await db.insert('categorias', {
-          ...cat,
-          'activa': 1,
-          'fechaCreacion': now,
-          'fechaModificacion': now,
-        });
-      }
-
-      // Marcas de ejemplo
-      final marcasEjemplo = [
-        {'nombre': 'Samsung', 'descripcion': 'Electrónica coreana'},
-        {'nombre': 'Drean', 'descripcion': 'Electrodomésticos argentinos'},
-        {'nombre': 'Suavestar', 'descripcion': 'Colchones'},
-        {'nombre': 'JBL', 'descripcion': 'Audio profesional'},
-        {'nombre': 'Lenovo', 'descripcion': 'Tecnología china'},
-        {'nombre': 'Sony', 'descripcion': 'Electrónica japonesa'},
-        {'nombre': 'LG', 'descripcion': 'Electrónica coreana'},
-        {'nombre': 'Philips', 'descripcion': 'Electrónica holandesa'},
-      ];
-
-      for (final marca in marcasEjemplo) {
-        await db.insert('marcas', {
-          ...marca,
-          'activa': 1,
-          'fechaCreacion': now,
-          'fechaModificacion': now,
-        });
-      }
-
-      // Ubicaciones de ejemplo
-      final ubicacionesEjemplo = [
-        {'deposito': 'Depósito Central', 'pasillo': 'A', 'estante': '1', 'nivel': '1', 'descripcion': 'Productos electrónicos'},
-        {'deposito': 'Depósito Central', 'pasillo': 'A', 'estante': '2', 'nivel': '1', 'descripcion': 'Celulares'},
-        {'deposito': 'Depósito Sur', 'pasillo': 'B', 'estante': '1', 'nivel': '1', 'descripcion': 'Electrodomésticos'},
-        {'deposito': 'Depósito Norte', 'pasillo': 'A', 'estante': '1', 'nivel': '1', 'descripcion': 'Muebles grandes'},
-        {'deposito': 'Depósito Norte', 'pasillo': 'B', 'estante': '1', 'nivel': '2', 'descripcion': 'Colchones'},
-      ];
-
-      for (final ubic in ubicacionesEjemplo) {
-        await db.insert('ubicaciones', {
-          ...ubic,
-          'activo': 1,
-          'fechaCreacion': now,
-          'fechaModificacion': now,
-        });
-      }
-
-      // Clientes de ejemplo
-      final clientesEjemplo = [
-        {
-          'nombre': 'Consumidor Final',
-          'cuit': '20-99999999-9',
-          'telefono': '+54 223 555-1234',
-          'email': 'consumidor.final@email.com',
-          'direccion': 'Av. Jara 1234',
-          'localidad': 'Mar del Plata',
-          'nota': 'Cliente frecuente',
-        },
-        {
-          'nombre': 'María González',
-          'cuit': '27-87654321-4',
-          'telefono': '+54 11 5555-5678',
-          'email': 'maria.gonzalez@email.com',
-          'direccion': 'Calle Mitre 567',
-          'localidad': 'Vicente López',
-          'nota': null,
-        },
-        {
-          'nombre': 'Empresa XYZ SRL',
-          'cuit': '30-71234567-8',
-          'telefono': '+54 11 4444-9876',
-          'email': 'compras@empresaXYZ.com',
-          'direccion': 'Av. Corrientes 1234, Piso 5',
-          'localidad': 'CABA',
-          'nota': 'Cliente corporativo - paga a 30 días',
-        },
-        {
-          'nombre': 'Carlos Rodríguez',
-          'cuit': '20-45678912-3',
-          'telefono': '+54 11 6666-7890',
-          'email': 'carlos.r@email.com',
-          'direccion': 'Calle Belgrano 890',
-          'localidad': 'San Isidro',
-          'nota': null,
-        },
-        {
-          'nombre': 'Lucía Fernández',
-          'cuit': '27-98765432-1',
-          'telefono': '+54 11 7777-2345',
-          'email': 'lucia.f@email.com',
-          'direccion': 'Av. Santa Fe 3456',
-          'localidad': 'CABA',
-          'nota': 'Prefiere contacto por WhatsApp',
-        },
-      ];
-
-      for (final cliente in clientesEjemplo) {
-        await db.insert('clientes', {
-          ...cliente,
-          'activo': 1,
-          'fechaCreacion': now,
-          'fechaModificacion': now,
-        });
-      }
-
-      // Configuración por defecto
-      await db.insert('configuracion', {
-        'nombreEmpresa': 'Mi Empresa SRL',
-        'cuit': '30-12345678-9',
-        'direccion': 'Av. Corrientes 1234, CABA',
-        'telefono': '+54 11 1234-5678',
-        'email': 'contacto@miempresa.com.ar',
-        'sitioWeb': 'www.miempresa.com.ar',
-        'condicionIva': 'Responsable Inscripto',
-        'logoPath': null,
-        'observaciones': null,
         'fechaModificacion': now,
       });
     }
+
+    // ----- UBICACIONES (2 - mismo depósito) -----
+    await db.insert('ubicaciones', {
+      'deposito': 'Depósito Central',
+      'pasillo': 'A',
+      'estante': '1',
+      'nivel': '1',
+      'codigoQR': null,
+      'descripcion': 'Productos electrónicos',
+      'activo': 1,
+      'fechaCreacion': now,
+      'fechaModificacion': now,
+    });
+    await db.insert('ubicaciones', {
+      'deposito': 'Depósito Central',
+      'pasillo': 'B',
+      'estante': '1',
+      'nivel': '1',
+      'codigoQR': null,
+      'descripcion': 'Electrodomésticos',
+      'activo': 1,
+      'fechaCreacion': now,
+      'fechaModificacion': now,
+    });
+
+    // ----- CLIENTES (1) -----
+    await db.insert('clientes', {
+      'nombre': 'Cliente de Ejemplo',
+      'cuit': '20-12345678-9',
+      'telefono': '+54 11 5555-1234',
+      'email': 'cliente@ejemplo.com',
+      'direccion': 'Av. Rivadavia 1234',
+      'localidad': 'CABA',
+      'nota': 'Registro de ejemplo. Podés editarlo o eliminarlo.',
+      'activo': 1,
+      'fechaCreacion': now,
+      'fechaModificacion': now,
+    });
+
+    // ----- PRODUCTOS (2) -----
+    await db.insert('productos', {
+      'sku': 'CEL-SAM-A17-001',
+      'codigoBarras': '7891234567890',
+      'nombre': 'Samsung Galaxy A17',
+      'descripcion': 'Smartphone 128GB, 6GB RAM',
+      'categoriaId': 3, // Celulares
+      'marcaId': 1, // Samsung
+      'proveedorId': 1,
+      'ubicacionId': 1, // Depósito Central A1-1
+      'modelo': 'A17',
+      'stockActual': 10,
+      'stockMinimo': 3,
+      'stockMaximo': 50,
+      'unidadMedida': 'Unidad',
+      'precioCompra': 180000.0,
+      'precioVenta': 250000.0,
+      'precioSugerido': 252000.0,
+      'fechaCompra': now,
+      'numeroFactura': null,
+      'peso': null,
+      'dimensiones': null,
+      'mesesGarantia': 12,
+      'fechaFinGarantia': null,
+      'estaActivo': 1,
+      'estaDisponible': 1,
+      'estado': 'en_stock',
+      'fechaCreacion': now,
+      'fechaUltimaModificacion': now,
+      'nota': 'Registro de ejemplo',
+    });
+
+    await db.insert('productos', {
+      'sku': 'LAV-DRE-NEXT-001',
+      'codigoBarras': '7891234567891',
+      'nombre': 'Lavarropas Drean Next 8kg',
+      'descripcion': 'Lavarropas automático 8kg, 1200 RPM',
+      'categoriaId': 4, // Lavarropas
+      'marcaId': 3, // Drean
+      'proveedorId': 1,
+      'ubicacionId': 2, // Depósito Central B1-1
+      'modelo': 'Next 8kg',
+      'stockActual': 3,
+      'stockMinimo': 5, // ⚠️ Stock bajo para que se vea la alerta
+      'stockMaximo': 20,
+      'unidadMedida': 'Unidad',
+      'precioCompra': 450000.0,
+      'precioVenta': 620000.0,
+      'precioSugerido': 630000.0,
+      'fechaCompra': now,
+      'numeroFactura': null,
+      'peso': null,
+      'dimensiones': null,
+      'mesesGarantia': 24,
+      'fechaFinGarantia': null,
+      'estaActivo': 1,
+      'estaDisponible': 1,
+      'estado': 'stock_bajo',
+      'fechaCreacion': now,
+      'fechaUltimaModificacion': now,
+      'nota': 'Registro de ejemplo con stock bajo',
+    });
+  }
 
   // 🔥 IMPORTANTE: 'table' es POSICIONAL (no named)
   Future<List<Map<String, dynamic>>> query(
@@ -541,20 +431,11 @@ class DatabaseHelper {
     required int id,
   }) async {
     final db = await database;
-    return await db.update(
-      table,
-      data,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.update(table, data, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<int> delete(String table, int id) async {
     final db = await database;
-    return await db.delete(
-      table,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete(table, where: 'id = ?', whereArgs: [id]);
   }
 }

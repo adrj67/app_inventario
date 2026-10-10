@@ -58,11 +58,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
       final cantidad = await BackupService.contarBackups();
       final ruta = await BackupService.obtenerRutaBackups();
 
-      // 🔥 DEBUG TEMPORAL
-      debugPrint('=== INFO BACKUPS ===');
-      debugPrint('Último: $ultimo');
-      debugPrint('Cantidad: $cantidad');
-      debugPrint('Ruta: $ruta');
+      
 
       // 🔥 DEBUG: listar archivos directamente
       final dir = Directory(ruta);
