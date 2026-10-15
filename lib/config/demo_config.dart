@@ -1,7 +1,7 @@
 class DemoConfig {
   /// 🔥 CAMBIAR A `true` PARA PROBAR RÁPIDO (usa segundos en lugar de días)
   /// 🔥 DEJAR EN `false` PARA PRODUCCIÓN
-  static const bool modoPruebaRapida = true;
+  static const bool modoPruebaRapida = false;
 
   /// Días de la demo real
   static const int diasDemo = 7;
