@@ -5,8 +5,6 @@ class ProductoRepository {
   final DatabaseHelper _db = DatabaseHelper();
 
   // ==================== LEER ====================
-
-  /// Obtener todos los productos
   Future<List<Producto>> getAll({bool soloActivos = true}) async {
     final maps = await _db.query(
       'productos',
@@ -16,7 +14,7 @@ class ProductoRepository {
     return maps.map((m) => Producto.fromMap(m)).toList();
   }
 
-  /// Buscar por nombre, SKU, código de barras o modelo
+  // Buscar por nombre, SKU, código de barras o modelo
   Future<List<Producto>> search(String query) async {
     final maps = await _db.query(
       'productos',
@@ -27,7 +25,7 @@ class ProductoRepository {
     return maps.map((m) => Producto.fromMap(m)).toList();
   }
 
-  /// Obtener por ID
+  // Obtener por ID
   Future<Producto?> getById(int id) async {
     final maps = await _db.query(
       'productos',
@@ -38,7 +36,7 @@ class ProductoRepository {
     return Producto.fromMap(maps.first);
   }
 
-  /// Productos con stock bajo (stockActual <= stockMinimo)
+  // Productos con stock bajo (stockActual <= stockMinimo)
   Future<List<Producto>> getStockBajo() async {
     final maps = await _db.query(
       'productos',
@@ -48,7 +46,7 @@ class ProductoRepository {
     return maps.map((m) => Producto.fromMap(m)).toList();
   }
 
-  /// Productos agotados (stockActual <= 0)
+  // Productos agotados (stockActual <= 0)
   Future<List<Producto>> getAgotados() async {
     final maps = await _db.query(
       'productos',
@@ -58,7 +56,7 @@ class ProductoRepository {
     return maps.map((m) => Producto.fromMap(m)).toList();
   }
 
-  /// Productos por proveedor
+  // Productos por proveedor
   Future<List<Producto>> getByProveedor(int proveedorId) async {
     final maps = await _db.query(
       'productos',
@@ -69,7 +67,7 @@ class ProductoRepository {
     return maps.map((m) => Producto.fromMap(m)).toList();
   }
 
-  /// Productos por categoría
+  // Productos por categoría
   Future<List<Producto>> getByCategoria(int categoriaId) async {
     final maps = await _db.query(
       'productos',
@@ -81,8 +79,6 @@ class ProductoRepository {
   }
 
   // ==================== GUARDAR ====================
-
-  /// Crear o actualizar producto
   Future<int> save(Producto producto) async {
     final data = producto.toMap();
 
@@ -97,8 +93,7 @@ class ProductoRepository {
   }
 
   // ==================== ELIMINAR ====================
-
-  /// Eliminación lógica (marca estaActivo = 0)
+  // Eliminación lógica (marca estaActivo = 0)
   Future<int> delete(int id) async {
     final producto = await getById(id);
     if (producto == null) return 0;
@@ -108,8 +103,7 @@ class ProductoRepository {
   }
 
   // ==================== OPERACIONES DE STOCK ====================
-
-  /// Ajustar stock (positivo = entrada, negativo = salida)
+  // Ajustar stock (positivo = entrada, negativo = salida)
   Future<int> ajustarStock(int productoId, int cantidad) async {
     final producto = await getById(productoId);
     if (producto == null) return 0;
@@ -139,14 +133,13 @@ class ProductoRepository {
   }
 
   // ==================== ESTADÍSTICAS ====================
-
-  /// Contar productos activos
+  // Contar productos activos
   Future<int> countActivos() async {
     final productos = await getAll(soloActivos: true);
     return productos.length;
   }
 
-  /// Valor total del inventario (stock * precioCompra)
+  // Valor total del inventario (stock * precioCompra)
   Future<double> getValorInventario() async {
     final productos = await getAll(soloActivos: true);
     double total = 0;
@@ -156,13 +149,13 @@ class ProductoRepository {
     return total;
   }
 
-  /// Cantidad de productos con stock bajo
+  // Cantidad de productos con stock bajo
   Future<int> countStockBajo() async {
     final productos = await getStockBajo();
     return productos.length;
   }
 
-  /// Cantidad de productos agotados
+  // Cantidad de productos agotados
   Future<int> countAgotados() async {
     final productos = await getAgotados();
     return productos.length;

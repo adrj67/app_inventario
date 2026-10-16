@@ -29,7 +29,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   bool _isLoading = true;
   bool _guardando = false;
 
-  // 🔥 NUEVO: Info de backups
+  // Info de backups
   DateTime? _ultimoBackup;
   int _cantidadBackups = 0;
   String _rutaBackups = '';
@@ -60,7 +60,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
 
       
 
-      // 🔥 DEBUG: listar archivos directamente
+      // DEBUG: listar archivos directamente
       final dir = Directory(ruta);
       if (await dir.exists()) {
         final archivos = dir.listSync();
@@ -270,8 +270,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     );
   }
 
-    // ==================== CREAR BACKUP ====================
-
+  // ==================== CREAR BACKUP ====================
   Future<void> _crearBackupManual() async {
     setState(() => _creandoBackup = true);
 
@@ -312,7 +311,6 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   }
 
   // ==================== RESTAURAR BACKUP ====================
-
   Future<void> _mostrarSelectorBackups() async {
     debugPrint('=== INICIANDO _mostrarSelectorBackups ===');
 
@@ -341,8 +339,6 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
 
     if (seleccionado == null) return;
     if (!mounted) return;
-
-    //if (seleccionado == null) return;
 
     // Confirmar restauración
     final confirmar = await showDialog<bool>(
@@ -868,7 +864,6 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
 }
 
 // ==================== DIÁLOGO SELECTOR DE BACKUP ====================
-
 class _SelectorBackupDialog extends StatefulWidget {
   final List<BackupInfo> backups;
 

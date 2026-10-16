@@ -1,12 +1,11 @@
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-//import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import '../models/configuracion.dart';
 import 'export_service.dart';
 
 class PdfService {
-  /// Genera un PDF genérico de tabla (para exportar cualquier listado)
+  // Genera un PDF genérico de tabla (para exportar cualquier listado)
   static Future<void> generarPdfTabla({
     required String titulo,
     required List<String> headers,
@@ -28,7 +27,7 @@ class PdfService {
         footer: (context) => _buildFooter(context),
         build: (context) => [
           pw.SizedBox(height: 16),
-          // 🔥 Mostrar leyenda de filtros si existe
+          // Mostrar leyenda de filtros si existe
           if (leyendaFiltros != null && leyendaFiltros.isNotEmpty) ...[
             pw.Container(
               width: double.infinity,
@@ -75,7 +74,7 @@ class PdfService {
     );
   }
 
-  /// Header del PDF con datos de la empresa
+  // Header del PDF con datos de la empresa
   static pw.Widget _buildHeader(
     String titulo,
     Configuracion config,
@@ -134,7 +133,7 @@ class PdfService {
     );
   }
 
-  /// Footer con número de página
+  // Footer con número de página
   static pw.Widget _buildFooter(pw.Context context) {
     return pw.Container(
       alignment: pw.Alignment.centerRight,
@@ -146,7 +145,7 @@ class PdfService {
     );
   }
 
-  /// Tabla con headers y filas
+  // Tabla con headers y filas
   static pw.Widget _buildTabla(
     List<String> headers,
     List<List<String>> rows,
@@ -175,7 +174,7 @@ class PdfService {
     );
   }
 
-  /// Formatea valores monetarios
+  // Formatea valores monetarios
   static String formatearMoneda(double valor) {
     final formatter = NumberFormat.currency(
       locale: 'es_AR',

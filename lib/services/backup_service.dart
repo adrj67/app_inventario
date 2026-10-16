@@ -35,7 +35,7 @@ class BackupService {
   static const int _maxBackups = 7;
   //static const String _prefsKeyUltimoBackup = 'ultimo_backup_fecha';
 
-  /// Lista de tablas a exportar (en orden de dependencias)
+  // Lista de tablas a exportar (en orden de dependencias)
   static const List<String> _tablas = [
     'configuracion',
     'proveedores',
@@ -51,7 +51,6 @@ class BackupService {
   ];
 
   // ==================== CARPETA ====================
-
   /// Obtiene (y crea si no existe) la carpeta de backups
   static Future<Directory> _obtenerCarpetaBackups() async {
     final documents = await getApplicationDocumentsDirectory();
@@ -67,7 +66,6 @@ class BackupService {
   }
 
   // ==================== CREAR BACKUP ====================
-
   /// Crea un backup completo de la DB
   /// Devuelve el archivo creado
   static Future<File> crearBackup() async {
@@ -108,8 +106,7 @@ class BackupService {
   }
 
   // ==================== LISTAR ====================
-
-  /// Lista todos los backups disponibles, ordenados por fecha DESC
+  // Lista todos los backups disponibles, ordenados por fecha DESC
   static Future<List<BackupInfo>> listarBackups() async {
     final carpeta = await _obtenerCarpetaBackups();
     final archivos = carpeta
@@ -123,7 +120,7 @@ class BackupService {
       try {
         final stat = await archivo.stat();
 
-        // 🔥 Extraer fecha del nombre: backup_2026-10-08_08-51-13.json
+        // Extraer fecha del nombre: backup_2026-10-08_08-51-13.json
         final nombre = path.basenameWithoutExtension(archivo.path);
         final sinPrefijo = nombre.replaceFirst('backup_', '');
         // sinPrefijo = "2026-10-08_08-51-13"
@@ -164,8 +161,7 @@ class BackupService {
   }
 
   // ==================== ROTACIÓN ====================
-
-  /// Elimina los backups más viejos, manteniendo solo los últimos N
+  // Elimina los backups más viejos, manteniendo solo los últimos 7
   static Future<int> _rotarBackups() async {
     final backups = await listarBackups();
 
@@ -185,7 +181,6 @@ class BackupService {
   }
 
   // ==================== FECHA ÚLTIMO BACKUP ====================
-
   static Future<void> _guardarFechaUltimoBackup(DateTime fecha) async {
     final documents = await getApplicationDocumentsDirectory();
     final archivo = File(
@@ -209,8 +204,7 @@ class BackupService {
   }
 
   // ==================== AUTO-BACKUP ====================
-
-  /// Verifica si hay que hacer backup (si pasaron más de 24 hs)
+  // Verifica si hay que hacer backup (si pasaron más de 24 hs)
   static Future<bool> necesitaBackupAutomatico() async {
     final ultimo = await obtenerFechaUltimoBackup();
     if (ultimo == null) return true;
@@ -219,8 +213,8 @@ class BackupService {
     return diferencia.inHours >= 24;
   }
 
-  /// Ejecuta el backup automático si es necesario
-  /// Devuelve `true` si se hizo un backup
+  // Ejecuta el backup automático si es necesario
+  // Devuelve `true` si se hizo un backup
   static Future<bool> ejecutarBackupAutomatico() async {
     if (!await necesitaBackupAutomatico()) return false;
 
@@ -234,9 +228,8 @@ class BackupService {
   }
 
   // ==================== RESTAURAR ====================
-
-  /// Restaura un backup sobre la DB actual
-  /// ⚠️ Hace un backup del estado actual antes de restaurar (por seguridad)
+  // Restaura un backup sobre la DB actual
+  // Hace un backup del estado actual antes de restaurar (por seguridad)
   static Future<void> restaurarBackup(File archivoBackup) async {
     // 1. Leer el JSON
     final contenido = await archivoBackup.readAsString();
@@ -272,14 +265,13 @@ class BackupService {
   }
 
   // ==================== INFO ====================
-
-  /// Obtiene la ruta donde se guardan los backups
+  // Obtiene la ruta donde se guardan los backups
   static Future<String> obtenerRutaBackups() async {
     final carpeta = await _obtenerCarpetaBackups();
     return carpeta.path;
   }
 
-  /// Cuenta cuántos backups hay
+  // Cuenta cuántos backups hay
   static Future<int> contarBackups() async {
     final backups = await listarBackups();
     return backups.length;

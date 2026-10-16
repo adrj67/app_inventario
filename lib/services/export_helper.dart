@@ -5,13 +5,13 @@ import 'export_service.dart';
 import 'pdf_service.dart';
 
 class ExportHelper {
-  /// Muestra un diálogo para elegir CSV o PDF
+  // Muestra un diálogo para elegir CSV o PDF
   static Future<void> mostrarDialogoExportacion({
     required BuildContext context,
     required String titulo,
     required List<String> headers,
     required List<List<String>> rows,
-    String? leyendaFiltros,   // 🔥 NUEVO
+    String? leyendaFiltros,
   }) async {
     if (rows.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -47,7 +47,7 @@ class ExportHelper {
               '${rows.length} registros',
               style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
-            // 🔥 Mostrar leyenda de filtros si existe
+            // Mostrar leyenda de filtros si existe
             if (leyendaFiltros != null && leyendaFiltros.isNotEmpty) ...[
               const SizedBox(height: 12),
               Container(
@@ -159,7 +159,7 @@ class ExportHelper {
       nombreArchivo: nombreArchivo,
       headers: headers,
       rows: rows,
-      leyendaFiltros: leyendaFiltros,   // 🔥 NUEVO
+      leyendaFiltros: leyendaFiltros,
     );
   }
 
@@ -176,7 +176,7 @@ class ExportHelper {
       headers: headers,
       rows: rows,
       config: config,
-      leyendaFiltros: leyendaFiltros,   // 🔥 NUEVO
+      leyendaFiltros: leyendaFiltros,
     );
   }
 }

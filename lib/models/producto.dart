@@ -5,7 +5,7 @@ class Producto {
   String nombre;
   String? descripcion;
   
-  // Relaciones (por ahora simples IDs)
+  // Relaciones (por IDs)
   int? categoriaId;
   int? marcaId;
   int? proveedorId;

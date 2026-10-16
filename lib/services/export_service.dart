@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ExportService {
-    /// Exporta datos a un archivo CSV y lo abre con el programa predeterminado
+    // Exporta datos a un archivo CSV y lo abre con el programa predeterminado
   static Future<void> exportToCsv({
     required String nombreArchivo,
     required List<String> headers,
@@ -15,7 +15,7 @@ class ExportService {
     // 1. Construir las filas del CSV
     final List<List<dynamic>> data = [];
 
-    // 🔥 Agregar leyenda de filtros al inicio (si existe)
+    // Agregar leyenda de filtros al inicio (si existe)
     if (leyendaFiltros != null && leyendaFiltros.isNotEmpty) {
       data.add([leyendaFiltros]);
       data.add([]); // Línea vacía
@@ -39,7 +39,7 @@ class ExportService {
     await _abrirArchivo(file);
   }
 
-  /// Obtiene la carpeta de Descargas (con fallback a Documentos)
+  // Obtiene la carpeta de Descargas (con fallback a Documentos)
   static Future<Directory> _obtenerCarpetaDescargas() async {
     try {
       final downloads = await getDownloadsDirectory();
@@ -58,7 +58,7 @@ class ExportService {
     return await getApplicationDocumentsDirectory();
   }
 
-  /// Abre un archivo con el programa predeterminado del sistema
+  // Abre un archivo con el programa predeterminado del sistema
   static Future<void> _abrirArchivo(File file) async {
     final uri = Uri.file(file.path);
 
@@ -81,13 +81,13 @@ class ExportService {
     }
   }
 
-  /// Genera un nombre de archivo con fecha actual
+  // Genera un nombre de archivo con fecha actual
   static String generarNombreArchivo(String prefijo) {
     final ahora = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
     return '${prefijo}_$ahora';
   }
 
-  /// Comparte un archivo (para PDF, WhatsApp, etc.)
+  // Comparte un archivo (para PDF, WhatsApp, etc.)
   static Future<void> sharePdfBytes({
     required List<int> bytes,
     required String nombreArchivo,

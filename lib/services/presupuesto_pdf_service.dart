@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
-//import 'package:path_provider/path_provider.dart';
 import '../models/configuracion.dart';
 import '../models/cliente.dart';
 import '../models/presupuesto.dart';
@@ -72,7 +71,6 @@ class PresupuestoPdfService {
   }
 
   // ==================== HEADER ====================
-
   static pw.Widget _buildHeader(
     Configuracion config,
     pw.ImageProvider? logo,
@@ -202,7 +200,6 @@ class PresupuestoPdfService {
   }
 
   // ==================== DATOS CLIENTE ====================
-
   static pw.Widget _buildDatosClienteYPresupuesto(
     Cliente? cliente,
     Presupuesto presupuesto,
@@ -328,7 +325,6 @@ class PresupuestoPdfService {
   }
 
   // ==================== TABLA PRODUCTOS ====================
-
   static pw.Widget _buildTablaProductos(
     List<PresupuestoItem> items,
     NumberFormat currencyFormat,
@@ -377,7 +373,6 @@ class PresupuestoPdfService {
   }
 
   // ==================== TOTALES ====================
-
   static pw.Widget _buildTotales(
     Presupuesto presupuesto,
     NumberFormat currencyFormat,
@@ -443,7 +438,6 @@ class PresupuestoPdfService {
   }
 
   // ==================== LEYENDAS ====================
-
   static pw.Widget _buildLeyendas(
     Presupuesto presupuesto,
     DateFormat dateFormat,
@@ -496,7 +490,6 @@ class PresupuestoPdfService {
   }
 
   // ==================== NOTAS ====================
-
   static pw.Widget _buildNotas(String nota) {
     return pw.Container(
       width: double.infinity,
@@ -527,7 +520,6 @@ class PresupuestoPdfService {
   }
 
   // ==================== FOOTER ====================
-
   static pw.Widget _buildFooter(pw.Context context, Configuracion config) {
     return pw.Container(
       margin: const pw.EdgeInsets.only(top: 16),

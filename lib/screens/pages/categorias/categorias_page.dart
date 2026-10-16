@@ -367,7 +367,6 @@ class _CategoriasPageState extends State<CategoriasPage> {
 }
 
 // ==================== CARD DE CATEGORÍA RAÍZ ====================
-
 class _CategoriaRaizCard extends StatelessWidget {
   final Categoria categoria;
   final List<Categoria> subcategorias;
@@ -510,7 +509,7 @@ class _CategoriaRaizCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: () {
-                    // 🔥 Llamar al controller directamente
+                    // Llamar al controller directamente
                     context.read<ProductosFilterController>().filtrarPorCategoria(categoria.id!);
                   },
                   icon: const Icon(Icons.arrow_forward, size: 16),
@@ -635,7 +634,6 @@ class _CategoriaRaizCard extends StatelessWidget {
 }
 
 // ==================== SUBCATEGORÍA EXPANSIBLE ====================
-
 class _SubcategoriaExpansion extends StatelessWidget {
   final Categoria subcategoria;
   final List<Producto> productos;
@@ -779,7 +777,6 @@ class _SubcategoriaExpansion extends StatelessWidget {
 }
 
 // ==================== CARD DE CATEGORÍA HUÉRFANA ====================
-
 class _CategoriaHuerfanaCard extends StatelessWidget {
   final Categoria categoria;
   final List<Producto> productos;

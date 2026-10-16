@@ -11,7 +11,6 @@ import '../productos/producto_form.dart';
 import 'package:provider/provider.dart';
 import '../../../controllers/productos_filter_controller.dart';
 
-
 class UbicacionesPage extends StatefulWidget {
   const UbicacionesPage({super.key});
 
@@ -330,7 +329,6 @@ class _UbicacionesPageState extends State<UbicacionesPage> {
 }
 
 // ==================== GRUPO DE DEPÓSITO ====================
-
 class _DepositoGrupo extends StatelessWidget {
   final String deposito;
   final List<Ubicacion> ubicaciones;
@@ -424,14 +422,6 @@ class _DepositoGrupo extends StatelessWidget {
               onProductoTap: onProductoTap,
             );
           }),
-          /*Padding(
-            padding: const EdgeInsets.all(8),
-            child: TextButton.icon(
-              onPressed: () => _verProductosDeUbicacion(context, ubicacion),
-              icon: const Icon(Icons.arrow_forward, size: 16),
-              label: const Text('Ver todos en Productos'),
-            ),
-          ),*/
         ],
       ),
     );
@@ -439,7 +429,6 @@ class _DepositoGrupo extends StatelessWidget {
 }
 
 // ==================== ITEM DE UBICACIÓN ====================
-
 class _UbicacionItem extends StatelessWidget {
   final Ubicacion ubicacion;
   final List<Producto> productos;
@@ -541,7 +530,7 @@ class _UbicacionItem extends StatelessWidget {
             ),
             ...productos.map((p) => _buildItemProducto(p)),
           ],
-          // 🔥 Botón Ver en Productos
+          // Botón Ver en Productos
           Padding(
             padding: const EdgeInsets.all(8),
             child: Row(
@@ -562,7 +551,7 @@ class _UbicacionItem extends StatelessWidget {
     );
   }
 
-  /// Devuelve el nombre de la ubicación sin el depósito (ya está en el grupo)
+  // Devuelve el nombre de la ubicación sin el depósito (ya está en el grupo)
   String _buildNombreCorto() {
     final parts = <String>[];
     if (ubicacion.pasillo != null && ubicacion.pasillo!.isNotEmpty) {

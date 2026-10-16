@@ -8,7 +8,6 @@ import '../../../models/producto.dart';
 import '../../../models/movimiento.dart';
 import '../../../models/categoria.dart';
 import '../../../models/proveedor.dart';
-//import '../../../widgets/export_button.dart';
 import '../../../services/export_helper.dart';
 import 'package:provider/provider.dart';
 import '../../../database/marca_repository.dart';
@@ -16,7 +15,6 @@ import '../../../database/ubicacion_repository.dart';
 import '../../../models/marca.dart';
 import '../../../models/ubicacion.dart';
 import '../../../controllers/productos_filter_controller.dart';
-
 
 class ReporteDetallePage extends StatefulWidget {
   final String tipo;
@@ -343,26 +341,26 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
         final cantidad = item['cantidad'] as int;
         final valor = item['valor'] as double;
 
-        // 🔥 Determinar entidad y nombre
+        // Determinar entidad y nombre
         String nombre;
         IconData icono;
-        MaterialColor colorBase;   // 🔥 MaterialColor en lugar de Color
+        MaterialColor colorBase;   // MaterialColor en lugar de Color
 
         if (widget.tipo == 'top_marcas') {
           final marca = item['marca'] as Marca;
           nombre = marca.nombre;
           icono = Icons.local_offer;
-          colorBase = Colors.teal;        // ✅ MaterialColor
+          colorBase = Colors.teal;        // MaterialColor
         } else if (widget.tipo == 'top_categorias') {
           final cat = item['categoria'] as Categoria;
           nombre = cat.nombre;
           icono = Icons.category;
-          colorBase = Colors.purple;      // ✅ MaterialColor
+          colorBase = Colors.purple;      // MaterialColor
         } else {
           final ubic = item['ubicacion'] as Ubicacion;
           nombre = ubic.nombreCompleto;
           icono = Icons.location_on;
-          colorBase = Colors.indigo;      // ✅ MaterialColor
+          colorBase = Colors.indigo;      // MaterialColor
         }
 
         final medalla = _getMedalla(index);
@@ -491,14 +489,6 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
     );
   }
 
-  /*
-  String? _nombrePadre(Categoria cat) {
-    if (cat.categoriaPadreId == null) return null;
-    // No tenemos acceso directo a _categorias aquí, mostramos solo el nombre
-    return null;
-  }
-  */
-
   String? _getMedalla(int index) {
     if (index == 0) return '🥇';
     if (index == 1) return '🥈';
@@ -576,7 +566,7 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          // 🔥 Botón Exportar (solo si hay datos cargados)
+          // Botón Exportar (solo si hay datos cargados)
           if (!_isLoading && _items.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(right: 12),
@@ -650,7 +640,6 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
   }
 
   Widget _buildListaProductos() {
-    //final currencyFormat = NumberFormat.currency(locale: 'es_AR', symbol: '\$', decimalDigits: 0);
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _items.length,
@@ -793,7 +782,7 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
         final item = _items[index] as Map<String, dynamic>;
         final esCategoria = tipo == 'categoria';
 
-        // 🔥 Obtener el nombre según el tipo
+        // Obtener el nombre según el tipo
         String nombre;
         if (esCategoria) {
           final cat = item['categoria'] as Categoria?;
@@ -902,7 +891,6 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
   }
 
   // ==================== EXPORTACIÓN ====================
-
   Widget _buildBotonExportar() {
     return Tooltip(
       message: 'Exportar a CSV o PDF',
@@ -937,7 +925,7 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
     );
   }
 
-  /// Prepara los headers y rows según el tipo de reporte
+  // Prepara los headers y rows según el tipo de reporte
   Map<String, dynamic>? _prepararDatosExportacion() {
     switch (widget.tipo) {
       case 'stock_bajo':
@@ -960,7 +948,6 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
   }
 
   // ==================== PREPARAR DATOS POR TIPO ====================
-
   Map<String, dynamic> _prepararDatosProductos() {
     final headers = [
       'ID',
@@ -1034,7 +1021,7 @@ class _ReporteDetallePageState extends State<ReporteDetallePage> {
     for (final item in _items) {
       final map = item as Map<String, dynamic>;
 
-      // 🔥 Extraer el nombre según el tipo (evita el error de Object)
+      // Extraer el nombre según el tipo (evita el error de Object)
       String nombreGrupo;
       if (esCategoria) {
         final cat = map['categoria'] as Categoria?;

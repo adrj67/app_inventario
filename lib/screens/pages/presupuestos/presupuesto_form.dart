@@ -128,7 +128,7 @@ class _PresupuestoFormState extends State<PresupuestoForm> {
           onPressed: () => Navigator.pop(context, false),
         ),
         actions: [
-          // 🔥 Botón Generar PDF
+          // Botón Generar PDF
           if (!_cargandoDatos && _items.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -202,7 +202,6 @@ class _PresupuestoFormState extends State<PresupuestoForm> {
   }
 
   // ==================== SECCIONES ====================
-
   Widget _buildSeccionDatosGenerales() {
     return _buildCard(
       titulo: 'Datos Generales',
@@ -713,7 +712,6 @@ class _PresupuestoFormState extends State<PresupuestoForm> {
   }
 
   // ==================== ACCIONES ====================
-
   Future<void> _seleccionarFecha({required bool esVencimiento}) async {
     final fecha = await showDatePicker(
       context: context,
@@ -905,7 +903,6 @@ class _PresupuestoFormState extends State<PresupuestoForm> {
 }
 
 // ==================== DIÁLOGO SELECTOR DE PRODUCTO ====================
-
 class _SelectorProductoDialog extends StatefulWidget {
   final List<Producto> productos;
   final List<int> productosYaAgregados;

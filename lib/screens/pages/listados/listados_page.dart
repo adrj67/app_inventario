@@ -5,9 +5,6 @@ import '../../../database/movimiento_repository.dart';
 import '../../../database/categoria_repository.dart';
 import '../../../database/proveedor_repository.dart';
 import 'reporte_detalle_page.dart';
-//import '../../../database/marca_repository.dart';
-//import '../../../database/ubicacion_repository.dart';
-
 
 class ListadosPage extends StatefulWidget {
   const ListadosPage({super.key});
@@ -21,8 +18,6 @@ class _ListadosPageState extends State<ListadosPage> {
   final MovimientoRepository _movimientoRepo = MovimientoRepository();
   final CategoriaRepository _categoriaRepo = CategoriaRepository();
   final ProveedorRepository _proveedorRepo = ProveedorRepository();
-  //final MarcaRepository _marcaRepo = MarcaRepository();
-  //final UbicacionRepository _ubicacionRepo = UbicacionRepository();
 
   bool _isLoading = true;
 
@@ -609,7 +604,6 @@ class _ListadosPageState extends State<ListadosPage> {
 }
 
 // ==================== CLASE AUXILIAR ====================
-
 class _ReporteData {
   final String titulo;
   final String descripcion;

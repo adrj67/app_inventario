@@ -98,14 +98,6 @@ class _MovimientoFormState extends State<MovimientoForm> {
     return _tipo == 'entrada' ? Colors.green.shade700 : Colors.red.shade700;
   }
 
-/*
-  IconData get _tipoIcon {
-    if (_tipo == 'entrada') return Icons.arrow_downward;
-    if (_tipo == 'salida') return Icons.arrow_upward;
-    return Icons.tune;
-  }
-*/
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

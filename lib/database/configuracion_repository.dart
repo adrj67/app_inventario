@@ -4,7 +4,7 @@ import 'database_helper.dart';
 class ConfiguracionRepository {
   final DatabaseHelper _db = DatabaseHelper();
 
-  /// Obtiene la configuración (siempre es 1 solo registro)
+  // Obtiene la configuración (siempre es 1 solo registro)
   Future<Configuracion> get() async {
     final maps = await _db.query('configuracion', orderBy: 'id ASC');
 
@@ -18,7 +18,7 @@ class ConfiguracionRepository {
     return Configuracion.fromMap(maps.first);
   }
 
-  /// Guarda la configuración (inserta o actualiza)
+  // Guarda la configuración (inserta o actualiza)
   Future<int> save(Configuracion config) async {
     final data = config.toMap();
 

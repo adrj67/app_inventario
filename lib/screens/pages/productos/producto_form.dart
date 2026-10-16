@@ -588,7 +588,6 @@ class _ProductoFormState extends State<ProductoForm> {
   }
 
   // ==================== SECCIONES ====================
-
   Widget _buildSeccionDatosBasicos() {
     return _buildCard(
       titulo: 'Datos Básicos',
@@ -1174,7 +1173,6 @@ class _ProductoFormState extends State<ProductoForm> {
   }
 
   // ==================== HELPERS ====================
-
   Widget _buildCard({
     required String titulo,
     required IconData icono,
@@ -1278,7 +1276,7 @@ class _ProductoFormState extends State<ProductoForm> {
     setState(() => _guardando = true);
 
     try {
-      // 🔥 Calcular fecha fin de garantía
+      // Calcular fecha fin de garantía
       final mesesGarantia = int.tryParse(_mesesGarantiaController.text);
       final fechaFinGarantia = (mesesGarantia != null && mesesGarantia > 0)
           ? DateTime(
@@ -1323,7 +1321,7 @@ class _ProductoFormState extends State<ProductoForm> {
         nota: _textoONull(_notaController.text),
       );
 
-      // 🔥 Detectar si es un cambio de precio
+      // Detectar si es un cambio de precio
       final esNuevo = !_esEdicion;
       final esDuplicado = widget.esDuplicado;
       final precioCambio = !esNuevo &&
@@ -1331,7 +1329,7 @@ class _ProductoFormState extends State<ProductoForm> {
           (widget.producto!.precioCompra != precioCompraNuevo ||
               widget.producto!.precioVenta != precioVentaNuevo);
 
-      // 🔥 Si cambió el precio, mostrar diálogo de motivo
+      // Si cambió el precio, mostrar diálogo de motivo
       String? notaCambio;
       if (precioCambio) {
         notaCambio = await _pedirMotivoCambio(
@@ -1348,10 +1346,10 @@ class _ProductoFormState extends State<ProductoForm> {
         }
       }
 
-      // 🔥 Guardar el producto
+      // Guardar el producto
       final id = await _repository.save(producto);
 
-      // 🔥 Registrar en historial si corresponde
+      // Registrar en historial si corresponde
       if (esNuevo || esDuplicado) {
         // Producto nuevo → registrar precio inicial
         final idFinal = _esEdicion ? producto.id! : id;
@@ -1390,11 +1388,11 @@ class _ProductoFormState extends State<ProductoForm> {
     }
   }
 
-  /// Muestra un diálogo para pedir el motivo del cambio de precio
-  /// Devuelve:
-  ///   - null: no hay motivo (pero continúa)
-  ///   - '__CANCELADO__': el usuario canceló el guardado
-  ///   - string: motivo ingresado
+  // Muestra un diálogo para pedir el motivo del cambio de precio
+  // Devuelve:
+  //   - null: no hay motivo (pero continúa)
+  //   - '__CANCELADO__': el usuario canceló el guardado
+  //   - string: motivo ingresado
   Future<String?> _pedirMotivoCambio({
     required double precioCompraAnterior,
     required double precioCompraNuevo,
@@ -1581,7 +1579,7 @@ class _ProductoFormState extends State<ProductoForm> {
     return t.isEmpty ? null : t;
   }
 
-    /// Devuelve el nombre de la categoría con su padre (si lo tiene)
+  // Devuelve el nombre de la categoría con su padre (si lo tiene)
   String _nombreCategoriaCompleto(Categoria cat) {
     if (cat.categoriaPadreId == null) {
       return cat.nombre;

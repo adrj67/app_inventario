@@ -1,4 +1,3 @@
-//import 'package:app_inventario_flutter/services/backup_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,21 +13,21 @@ import 'package:window_manager/window_manager.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🔥 Inicializar window_manager
+  // Inicializar window_manager
   await windowManager.ensureInitialized();
 
-  // 🔥 Inicializar SQLite para Windows
+  // Inicializar SQLite para Windows
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
 
-  // 🔥 Inicializar la demo (guarda fecha si es la primera vez)
+  // Inicializar la demo (guarda fecha si es la primera vez)
   if (DemoConfig.isDemo) {
     await DemoService.inicializar();
   }
 
-  // 🔥 Inicializar la base de datos
+  // Inicializar la base de datos
   await DatabaseHelper().init();
 
   runApp(const MyApp());
@@ -76,12 +75,12 @@ class MyApp extends StatelessWidget {
         ),
       ),
       debugShowCheckedModeBanner: false,
-      // 🔥 Verificar el estado de la demo
+      // Verificar el estado de la demo
       home: _decidirPantallaInicial(),
     );
   }
 
-  /// Decide si mostrar la pantalla bloqueada o la app
+  // Decide si mostrar la pantalla bloqueada o la app
   Widget _decidirPantallaInicial() {
     // Si no es demo → app normal
     if (!DemoConfig.isDemo) {
@@ -114,7 +113,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Pantalla simple mientras se verifica el estado de la demo
+// Pantalla simple mientras se verifica el estado de la demo
 class _SplashScreen extends StatelessWidget {
   const _SplashScreen();
 

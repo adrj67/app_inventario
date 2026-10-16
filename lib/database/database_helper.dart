@@ -28,6 +28,7 @@ class DatabaseHelper {
   }
 
   Future<void> _onCreate(Database db, int version) async {
+
     // ==================== PROVEEDORES ====================
     await db.execute('''
         CREATE TABLE proveedores(
@@ -383,7 +384,7 @@ class DatabaseHelper {
       'ubicacionId': 2, // Depósito Central B1-1
       'modelo': 'Next 8kg',
       'stockActual': 3,
-      'stockMinimo': 5, // ⚠️ Stock bajo para que se vea la alerta
+      'stockMinimo': 5, // Stock bajo para que se vea la alerta
       'stockMaximo': 20,
       'unidadMedida': 'Unidad',
       'precioCompra': 450000.0,
@@ -404,7 +405,7 @@ class DatabaseHelper {
     });
   }
 
-  // 🔥 IMPORTANTE: 'table' es POSICIONAL (no named)
+  // IMPORTANTE: 'table' es POSICIONAL (no named)
   Future<List<Map<String, dynamic>>> query(
     String table, {
     String? where,

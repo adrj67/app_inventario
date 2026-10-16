@@ -506,7 +506,7 @@ class _MovimientoCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        // 🔥 Badge extra si es ajuste de inventario
+                        // Badge extra si es ajuste de inventario
                         if (_esAjusteInventario) ...[
                           const SizedBox(width: 6),
                           Container(

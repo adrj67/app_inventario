@@ -6,7 +6,6 @@ class PresupuestoRepository {
   final DatabaseHelper _db = DatabaseHelper();
 
   // ==================== LEER ====================
-
   Future<List<Presupuesto>> getAll() async {
     final maps = await _db.query('presupuestos', orderBy: 'fecha DESC, id DESC');
     return maps.map((m) => Presupuesto.fromMap(m)).toList();
@@ -53,7 +52,6 @@ class PresupuestoRepository {
   }
 
   // ==================== GENERAR NÚMERO ====================
-
   Future<String> generarNumero() async {
     final anio = DateTime.now().year;
     final db = await _db.database;
@@ -70,7 +68,7 @@ class PresupuestoRepository {
 
   // ==================== GUARDAR (con transacción) ====================
 
-  /// Guarda el presupuesto (cabecera + items) en una transacción
+  // Guarda el presupuesto (cabecera + items) en una transacción
   Future<int> save(Presupuesto presupuesto, List<PresupuestoItem> items) async {
     final db = await _db.database;
 
@@ -115,7 +113,6 @@ class PresupuestoRepository {
   }
 
   // ==================== ACTUALIZAR ESTADO ====================
-
   Future<int> actualizarEstado(int id, String nuevoEstado) async {
     final db = await _db.database;
     return await db.update(
@@ -130,7 +127,6 @@ class PresupuestoRepository {
   }
 
   // ==================== ELIMINAR ====================
-
   Future<int> delete(int id) async {
     final db = await _db.database;
     return await db.transaction((txn) async {
@@ -148,7 +144,6 @@ class PresupuestoRepository {
   }
 
   // ==================== ESTADÍSTICAS ====================
-
   Future<int> countByEstado(String estado) async {
     final presupuestos = await getByEstado(estado);
     return presupuestos.length;

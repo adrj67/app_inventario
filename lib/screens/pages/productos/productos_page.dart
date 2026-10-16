@@ -56,7 +56,7 @@ class _ProductosPageState extends State<ProductosPage> {
     _cargarUbicaciones(); 
     _loadProductos();
 
-    // 🔥 Escuchar cambios del controller de filtros
+    // Escuchar cambios del controller de filtros
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final controller = context.read<ProductosFilterController>();
@@ -86,7 +86,7 @@ class _ProductosPageState extends State<ProductosPage> {
   @override
   void dispose() {
     _searchController.dispose();
-    // 🔥 Quitar el listener
+    // Quitar el listener
     try {
       context.read<ProductosFilterController>().removeListener(_onFiltroExternoAplicado);
     } catch (_) {}
@@ -146,7 +146,7 @@ class _ProductosPageState extends State<ProductosPage> {
           .toList();
     }
 
-    // 🔥 NUEVO: Filtro por ubicación
+    // Filtro por ubicación
     if (_filtroUbicacionId != null) {
       resultado = resultado.where((p) => p.ubicacionId == _filtroUbicacionId).toList();
     }
@@ -192,9 +192,6 @@ class _ProductosPageState extends State<ProductosPage> {
       fechaCompra: DateTime.now(),                       // Fecha actual
       fechaCreacion: DateTime.now(),
       fechaUltimaModificacion: DateTime.now(),
-      //fechaVenta: null,
-      //numeroFacturaVenta: null,
-      // El resto se mantiene igual
     );
 
     // Abrir el formulario con los datos precargados
@@ -204,7 +201,7 @@ class _ProductosPageState extends State<ProductosPage> {
         fullscreenDialog: true,
         builder: (context) => ProductoForm(
           producto: copia,
-          esDuplicado: true,   // 🔥 Marca como duplicado para que no lo trate como edición
+          esDuplicado: true,   // Marca como duplicado para que no lo trate como edición
         ),
       ),
     );
@@ -279,7 +276,7 @@ class _ProductosPageState extends State<ProductosPage> {
     }
   }
 
-  /// Devuelve el nombre de la categoría con su padre (si lo tiene)
+  // Devuelve el nombre de la categoría con su padre (si lo tiene)
   String _nombreCategoriaCompleto(Categoria cat) {
     if (cat.categoriaPadreId == null) {
       return cat.nombre;
@@ -293,7 +290,7 @@ class _ProductosPageState extends State<ProductosPage> {
     return cat.nombre;
   }
 
-    /// Devuelve los IDs de una categoría + todos sus descendientes (subcategorías)
+  // Devuelve los IDs de una categoría + todos sus descendientes (subcategorías)
   Set<int> _obtenerIdsDescendientes(int categoriaRaizId) {
     final ids = <int>{categoriaRaizId};
 
@@ -420,7 +417,7 @@ class _ProductosPageState extends State<ProductosPage> {
                   ];
                 }).toList(),
                 color: Colors.blue,
-                leyendaFiltros: _construirLeyendaFiltros(),  // 🔥 NUEVO
+                leyendaFiltros: _construirLeyendaFiltros(),
               ),
             ],
           ),
@@ -571,7 +568,7 @@ class _ProductosPageState extends State<ProductosPage> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // 🔥 Si el ancho es menor a 900px, apilamos los dropdowns
+          // Si el ancho es menor a 900px, apilamos los dropdowns
           final esAngosto = constraints.maxWidth < 900;
 
           return Column(
@@ -624,14 +621,14 @@ class _ProductosPageState extends State<ProductosPage> {
 
               // ==================== FILA 2: DROPDOWNS ====================
               if (esAngosto) ...[
-                // 🔥 Layout vertical para pantallas angostas
+                // Layout vertical para pantallas angostas
                 _buildDropdownCategoria(),
                 const SizedBox(height: 8),
                 _buildDropdownMarca(),
                 const SizedBox(height: 8),
                 _buildDropdownUbicacion(),
               ] else ...[
-                // 🔥 Layout horizontal para pantallas anchas
+                // Layout horizontal para pantallas anchas
                 Row(
                   children: [
                     Expanded(child: _buildDropdownCategoria()),
@@ -649,7 +646,7 @@ class _ProductosPageState extends State<ProductosPage> {
     );
   }
 
-  // 🔥 Dropdown de Categoría
+  // Dropdown de Categoría
   Widget _buildDropdownCategoria() {
     final seleccionada = _filtroCategoriaId != null;
 
@@ -769,7 +766,7 @@ class _ProductosPageState extends State<ProductosPage> {
     );
   }
 
-  // 🔥 Dropdown de Marca
+  // Dropdown de Marca
   Widget _buildDropdownMarca() {
     final seleccionada = _filtroMarcaId != null;
 
@@ -836,7 +833,7 @@ class _ProductosPageState extends State<ProductosPage> {
     );
   }
 
-  // 🔥 Dropdown de Ubicación
+  // Dropdown de Ubicación
   Widget _buildDropdownUbicacion() {
     final seleccionada = _filtroUbicacionId != null;
 
@@ -1057,7 +1054,7 @@ class _ProductosPageState extends State<ProductosPage> {
     );
   }
 
-  /// Construye el texto con los filtros aplicados
+  // Construye el texto con los filtros aplicados
   String? _construirLeyendaFiltros() {
     final filtros = <String>[];
 
@@ -1101,7 +1098,6 @@ class _ProductosPageState extends State<ProductosPage> {
 }
 
 // ==================== WIDGET CARD ====================
-
 class _ProductoCard extends StatelessWidget {
   final Producto producto;
   final VoidCallback onTap;
@@ -1297,7 +1293,7 @@ class _ProductoCard extends StatelessWidget {
 
               const SizedBox(width: 8),
 
-              // 🔥 Botón Duplicar
+              // Botón Duplicar
               IconButton(
                 icon: const Icon(Icons.copy_outlined, color: Colors.blue),
                 onPressed: onDuplicar,

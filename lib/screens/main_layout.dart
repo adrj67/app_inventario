@@ -19,7 +19,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../services/backup_service.dart';
 
-
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
 
@@ -30,7 +29,7 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
 
-  // 🔥 Controller compartido para filtros de productos
+  // Controller compartido para filtros de productos
   final ProductosFilterController _productosFilterController =
       ProductosFilterController();
 
@@ -55,10 +54,10 @@ class _MainLayoutState extends State<MainLayout> {
       const ConfiguracionPage(), // 9
     ];
 
-    // 🔥 Escuchar cambios del controller
+    // Escuchar cambios del controller
     _productosFilterController.addListener(_onFiltroProductosCambiado);
 
-    // 🔥 Cargar estado de la demo
+    // Cargar estado de la demo
     if (DemoConfig.isDemo) {
       _cargarDemoStatus();
       // Actualizar cada minuto
@@ -69,13 +68,13 @@ class _MainLayoutState extends State<MainLayout> {
       setState(() => _cargandoDemo = false);
     }
 
-    // 🔥 NUEVO: Backup automático
+    // Backup automático
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _verificarBackupAutomatico();
     });
   }
 
-  /// Verifica si hay que hacer backup automático (pasadas las 24hs)
+  // Verifica si hay que hacer backup automático (pasadas las 24hs)
   Future<void> _verificarBackupAutomatico() async {
     try {
       final hizoBackup = await BackupService.ejecutarBackupAutomatico();
@@ -192,7 +191,7 @@ class _MainLayoutState extends State<MainLayout> {
     }
   }
 
-    Future<void> _mostrarDialogoDemo(BuildContext context, DemoStatus status) async {
+  Future<void> _mostrarDialogoDemo(BuildContext context, DemoStatus status) async {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
     await showDialog(
@@ -432,24 +431,9 @@ class _MainLayoutState extends State<MainLayout> {
               onPressed: () => _refreshData(context),
             ),
             const SizedBox(width: 8),
-            // 🔥 Badge dinámico de demo (clickeable)
+            // Badge dinámico de demo (clickeable)
             if (DemoConfig.isDemo && !_cargandoDemo && _demoStatus != null)
               _buildDemoBadge(context, _demoStatus!),
-            /* Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade700,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                'DEMO',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-              ),
-            ),*/
           ],
         ),
         drawer: MainDrawer(

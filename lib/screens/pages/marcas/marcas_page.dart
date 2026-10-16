@@ -308,7 +308,6 @@ class _MarcasPageState extends State<MarcasPage> {
 }
 
 // ==================== WIDGET CARD ====================
-
 class _MarcaCard extends StatelessWidget {
   final Marca marca;
   final List<Producto> productos;
@@ -465,7 +464,6 @@ class _MarcaCard extends StatelessWidget {
                     onPressed: () {
                         context.read<ProductosFilterController>().filtrarPorMarca(marca.id!);
                     },
-                    //onPressed: () => _verTodosProductos(context, marca),
                     icon: const Icon(Icons.arrow_forward, size: 16),
                     label: const Text('Ver todos en Productos'),
                   ),
@@ -567,20 +565,4 @@ class _MarcaCard extends StatelessWidget {
       ),
     );
   }
-
-  /*void _verTodosProductos(BuildContext context, Marca marca) {
-    // 🔥 Enviar filtro al controller
-    context.read<ProductosFilterController>().filtrarPorMarca(marca.id!);
-  }*/
-
-  /* void _verTodosProductos(BuildContext context) {
-    // Por ahora mostramos un SnackBar informativo
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Andá a "Productos" y filtrá por "${marca.nombre}"'),
-        backgroundColor: Colors.teal.shade700,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }*/
 }

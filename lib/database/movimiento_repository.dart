@@ -6,7 +6,6 @@ class MovimientoRepository {
   final DatabaseHelper _db = DatabaseHelper();
 
   // ==================== LEER ====================
-
   Future<List<Movimiento>> getAll() async {
     final maps = await _db.query(
       'movimientos',
@@ -57,8 +56,8 @@ class MovimientoRepository {
 
   // ==================== GUARDAR CON TRANSACCIÓN ====================
 
-  /// Guarda un movimiento y actualiza el stock del producto.
-  /// Todo se hace en una transacción: si algo falla, se revierte.
+  // Guarda un movimiento y actualiza el stock del producto.
+  // Todo se hace en una transacción: si algo falla, se revierte.
   Future<int> save(Movimiento movimiento) async {
     final db = await _db.database;
 
@@ -126,7 +125,6 @@ class MovimientoRepository {
   }
 
   // ==================== ESTADÍSTICAS ====================
-
   Future<int> countMovimientos() async {
     final maps = await _db.query('movimientos');
     return maps.length;

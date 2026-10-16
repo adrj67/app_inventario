@@ -17,7 +17,7 @@ class ProductosFilterController extends ChangeNotifier {
   int _contador = 0;
   int get contador => _contador;
 
-  /// Aplica un filtro por categoría y limpia los demás
+  // Aplica un filtro por categoría y limpia los demás
   void filtrarPorCategoria(int categoriaId) {
     _categoriaId = categoriaId;
     _marcaId = null;
@@ -27,7 +27,7 @@ class ProductosFilterController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Aplica un filtro por marca y limpia los demás
+  // Aplica un filtro por marca y limpia los demás
   void filtrarPorMarca(int marcaId) {
     _categoriaId = null;
     _marcaId = marcaId;
@@ -37,7 +37,7 @@ class ProductosFilterController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Aplica un filtro por ubicación y limpia los demás
+  // Aplica un filtro por ubicación y limpia los demás
   void filtrarPorUbicacion(int ubicacionId) {
     _categoriaId = null;
     _marcaId = null;
@@ -47,7 +47,7 @@ class ProductosFilterController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Limpia todos los filtros
+  // Limpia todos los filtros
   void limpiar() {
     _categoriaId = null;
     _marcaId = null;

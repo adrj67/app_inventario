@@ -18,7 +18,7 @@ class DemoStatus {
     this.modoRapido = false,
   });
 
-  /// Texto formateado para mostrar en la UI
+  // Texto formateado para mostrar en la UI
   String get textoRestante {
     if (expirado) return 'Expirado';
     if (modoRapido) {
@@ -30,7 +30,7 @@ class DemoStatus {
     return '$minutosRestantes min';
   }
 
-  /// Nivel de urgencia (para colores)
+  // Nivel de urgencia (para colores)
   String get urgencia {
     if (expirado) return 'expirado';
 
@@ -56,7 +56,7 @@ class DemoStatus {
 }
 
 class DemoService {
-  /// Inicializa la fecha de inicio (solo la primera vez)
+  // Inicializa la fecha de inicio (solo la primera vez)
   static Future<void> inicializar() async {
     final prefs = await SharedPreferences.getInstance();
     if (!prefs.containsKey(DemoConfig.prefsKeyStartDate)) {
@@ -67,7 +67,7 @@ class DemoService {
     }
   }
 
-  /// Obtiene el estado actual de la demo
+  // Obtiene el estado actual de la demo
   static Future<DemoStatus> obtenerEstado() async {
     final prefs = await SharedPreferences.getInstance();
     final startStr = prefs.getString(DemoConfig.prefsKeyStartDate);
@@ -125,8 +125,8 @@ class DemoService {
     }
   }
 
-  /// Resetea la demo (borra la fecha de inicio)
-  /// ⚠️ Solo para desarrollo
+  // Resetea la demo (borra la fecha de inicio)
+  // Solo para desarrollo
   static Future<void> resetear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(DemoConfig.prefsKeyStartDate);

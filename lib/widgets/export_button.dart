@@ -6,7 +6,7 @@ class ExportButton extends StatelessWidget {
   final List<String> headers;
   final List<List<String>> rows;
   final MaterialColor? color;
-  final String? leyendaFiltros;   // 🔥 NUEVO
+  final String? leyendaFiltros;
 
   const ExportButton({
     super.key,
@@ -29,7 +29,7 @@ class ExportButton extends StatelessWidget {
           titulo: titulo,
           headers: headers,
           rows: rows,
-          leyendaFiltros: leyendaFiltros,   // 🔥 NUEVO
+          leyendaFiltros: leyendaFiltros,
         ),
         style: OutlinedButton.styleFrom(
           foregroundColor: baseColor.shade700,
