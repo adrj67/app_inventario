@@ -85,9 +85,6 @@ class _ListadosPageState extends State<ListadosPage> {
             const SizedBox(height: 16),
             _buildReportesGrid(),
             const SizedBox(height: 32),
-            _buildTituloSeccion('Exportar Datos'),
-            const SizedBox(height: 16),
-            _buildExportarGrid(),
           ],
         ),
       ),
@@ -461,103 +458,6 @@ class _ListadosPageState extends State<ListadosPage> {
     );
   }
 
-  Widget _buildExportarGrid() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildExportarCard(
-            titulo: 'Exportar Productos',
-            descripcion: 'Todos los productos a CSV',
-            icono: Icons.inventory_2,
-            color: Colors.blue,
-            onTap: () => _exportarProductos(),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildExportarCard(
-            titulo: 'Exportar Movimientos',
-            descripcion: 'Historial completo a CSV',
-            icono: Icons.history,
-            color: Colors.amber,
-            onTap: () => _exportarMovimientos(),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildExportarCard(
-            titulo: 'Stock Bajo',
-            descripcion: 'Lista de reposición a CSV',
-            icono: Icons.warning_amber,
-            color: Colors.orange,
-            onTap: () => _exportarStockBajo(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExportarCard({
-    required String titulo,
-    required String descripcion,
-    required IconData icono,
-    required MaterialColor color,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [color.shade400, color.shade700],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.3),
-                spreadRadius: 1,
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(icono, color: Colors.white, size: 28),
-                  const Spacer(),
-                  const Icon(Icons.download, color: Colors.white70, size: 20),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                titulo,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                descripcion,
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   void _abrirReporte(_ReporteData reporte) {
     Navigator.push(
       context,
@@ -567,37 +467,6 @@ class _ListadosPageState extends State<ListadosPage> {
           titulo: reporte.titulo,
           color: reporte.color,
         ),
-      ),
-    );
-  }
-
-  Future<void> _exportarProductos() async {
-    // Por ahora mostramos un mensaje
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Exportación a CSV en desarrollo'),
-        backgroundColor: Colors.blue,
-      ),
-    );
-  }
-
-  Future<void> _exportarMovimientos() async {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Exportación a CSV en desarrollo'),
-        backgroundColor: Colors.amber,
-      ),
-    );
-  }
-
-  Future<void> _exportarStockBajo() async {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Exportación a CSV en desarrollo'),
-        backgroundColor: Colors.orange,
       ),
     );
   }
