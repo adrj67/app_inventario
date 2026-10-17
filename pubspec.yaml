@@ -31,6 +31,9 @@ dependencies:
   # ESTADO
   provider: ^6.1.1
 
+  # LOGO
+  file_picker: ^8.1.2
+
   # Localizaciones
   flutter_localizations:
     sdk: flutter

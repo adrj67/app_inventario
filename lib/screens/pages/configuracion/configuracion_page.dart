@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+//import 'package:flutter/foundation.dart';
 import '../../../database/configuracion_repository.dart';
 import '../../../models/configuracion.dart';
 import 'package:intl/intl.dart';
 import '../../../services/backup_service.dart';
 import 'dart:io';
+import '../../../services/logo_service.dart';
 
 class ConfiguracionPage extends StatefulWidget {
   const ConfiguracionPage({super.key});
@@ -35,6 +37,10 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   String _rutaBackups = '';
   bool _cargandoBackups = true;
   bool _creandoBackup = false;
+
+  // Logo
+  String? _logoPath;
+  bool _cargandoLogo = false;
 
   final List<String> _condicionesIva = [
     'Responsable Inscripto',
@@ -467,6 +473,13 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   Future<void> _cargarConfiguracion() async {
     try {
       final config = await _repository.get();
+      final logoPath = await LogoService.obtenerRutaLogo();
+
+    // 🔥 DEBUG
+    debugPrint('=== CARGANDO CONFIG ===');
+    debugPrint('logoPath desde DB: ${config.logoPath}');
+    debugPrint('=======================');
+
       setState(() {
         _configId = config.id;
         _nombreController.text = config.nombreEmpresa;
@@ -477,6 +490,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
         _sitioWebController.text = config.sitioWeb ?? '';
         _condicionIva = config.condicionIva ?? 'Responsable Inscripto';
         _observacionesController.text = config.observaciones ?? '';
+        _logoPath = logoPath;
         _isLoading = false;
       });
     } catch (e) {
@@ -503,7 +517,9 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                       children: [
                         _buildHeader(),
                         const SizedBox(height: 24),
-                        _buildCardDatosFiscales(),
+                         _buildCardDatosFiscales(),
+                        const SizedBox(height: 16),
+                        _buildCardLogo(),
                         const SizedBox(height: 16),
                         _buildCardContacto(),
                         const SizedBox(height: 16),
@@ -518,6 +534,149 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildCardLogo() {
+    return _buildCard(
+      titulo: 'Logo de la Empresa',
+      icono: Icons.image,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Preview del logo
+            Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: _cargandoLogo
+                  ? const Center(child: CircularProgressIndicator())
+                  : _logoPath == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.image_outlined,
+                              size: 40,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Sin logo',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        )
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            File(_logoPath!),
+                            // 🔥 Key única para forzar recarga cuando cambia la ruta
+                            key: ValueKey(_logoPath),
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, _, _) => Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.broken_image,
+                                  size: 40,
+                                  color: Colors.red.shade300,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Error al cargar',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.red.shade400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+            ),
+            const SizedBox(width: 20),
+
+            // Botones y descripción
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Este logo aparecerá en los presupuestos y documentos PDF.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Formatos recomendados: PNG o JPG · Tamaño máximo: 2 MB',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _cargandoLogo ? null : _seleccionarLogo,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple.shade700,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        icon: Icon(
+                          _logoPath == null ? Icons.upload : Icons.swap_horiz,
+                          size: 18,
+                        ),
+                        label: Text(
+                          _logoPath == null ? 'Subir logo' : 'Cambiar logo',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      if (_logoPath != null) ...[
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(
+                          onPressed: _cargandoLogo ? null : _eliminarLogo,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red.shade700,
+                            side: BorderSide(color: Colors.red.shade700),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          icon: const Icon(Icons.delete_outline, size: 18),
+                          label: const Text('Eliminar'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -819,6 +978,139 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     );
   }
 
+  Future<void> _seleccionarLogo() async {
+    try {
+      // 1. Abrir selector
+      final rutaOrigen = await LogoService.seleccionarArchivo();
+      if (rutaOrigen == null) return;
+
+      if (!mounted) return;
+      setState(() => _cargandoLogo = true);
+
+      // 2. Copiar el archivo
+      final rutaDestino = await LogoService.copiarLogo(rutaOrigen);
+
+      // 3. Actualizar la config con la nueva ruta
+      await _actualizarConfiguracionConLogo(rutaDestino);
+
+      if (!mounted) return;
+      setState(() {
+        _logoPath = rutaDestino;
+        _cargandoLogo = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Logo actualizado correctamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _cargandoLogo = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al subir el logo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _eliminarLogo() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Eliminar logo'),
+          ],
+        ),
+        content: const Text('¿Estás seguro que querés eliminar el logo?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    setState(() => _cargandoLogo = true);
+
+    try {
+      await LogoService.eliminarLogo();
+      await _actualizarConfiguracionConLogo(null);
+
+      if (!mounted) return;
+      setState(() {
+        _logoPath = null;
+        _cargandoLogo = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Logo eliminado'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _cargandoLogo = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _actualizarConfiguracionConLogo(String? rutaLogo) async {
+    try {
+      final config = await _repository.get();
+      
+      // 🔥 Crear el objeto con el logoPath explícito
+      final actualizada = Configuracion(
+        id: config.id,
+        nombreEmpresa: config.nombreEmpresa,
+        cuit: config.cuit,
+        direccion: config.direccion,
+        telefono: config.telefono,
+        email: config.email,
+        sitioWeb: config.sitioWeb,
+        condicionIva: config.condicionIva,
+        logoPath: rutaLogo,   // 🔥 Valor explícito
+        observaciones: config.observaciones,
+        fechaModificacion: DateTime.now(),
+      );
+
+      await _repository.save(actualizada);
+
+      // 🔥 Verificar que se guardó
+      final verificacion = await _repository.get();
+      debugPrint('=== VERIFICACIÓN ===');
+      debugPrint('Después de guardar: ${verificacion.logoPath}');
+      debugPrint('===================');
+    } catch (e) {
+      debugPrint('Error actualizando config con logo: $e');
+      rethrow;
+    }
+  }
+
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -834,6 +1126,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
         email: _textoONull(_emailController.text),
         sitioWeb: _textoONull(_sitioWebController.text),
         condicionIva: _condicionIva,
+        logoPath: _logoPath,
         observaciones: _textoONull(_observacionesController.text),
         fechaModificacion: DateTime.now(),
       );

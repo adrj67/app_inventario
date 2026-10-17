@@ -1,8 +1,11 @@
+//import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
 import '../models/configuracion.dart';
 import 'export_service.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class PdfService {
   // Genera un PDF genérico de tabla (para exportar cualquier listado)
@@ -12,9 +15,33 @@ class PdfService {
     required List<List<String>> rows,
     required Configuracion config,
     List<double>? columnWidths,
-    String? leyendaFiltros, 
+    String? leyendaFiltros,
   }) async {
     final pdf = pw.Document();
+
+    // 🔥 Cargar logo si existe
+        // 🔥 Cargar logo si existe
+    pw.ImageProvider? logoImage;
+    if (config.logoPath != null) {
+      try {
+        final logoFile = File(config.logoPath!);
+        final existe = await logoFile.exists();
+        final tamanio = existe ? (await logoFile.stat()).size : 0;
+        
+        // 🔥 DEBUG
+        debugPrint('=== LOGO EN PDF ===');
+        debugPrint('Ruta: ${config.logoPath}');
+        debugPrint('Existe: $existe');
+        debugPrint('tamanio: $tamanio bytes');
+        debugPrint('===================');
+        
+        if (existe && tamanio > 0) {
+          logoImage = pw.MemoryImage(await logoFile.readAsBytes());
+        }
+      } catch (e) {
+        debugPrint('Error cargando logo: $e');
+      }
+    }
 
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
     final fechaGeneracion = dateFormat.format(DateTime.now());
@@ -23,11 +50,16 @@ class PdfService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.landscape,
         margin: const pw.EdgeInsets.all(24),
-        header: (context) => _buildHeader(titulo, config, fechaGeneracion),
+        // 🔥 Pasar logoImage al header
+        header: (context) => _buildHeader(
+          titulo,
+          config,
+          fechaGeneracion,
+          logoImage,
+        ),
         footer: (context) => _buildFooter(context),
         build: (context) => [
           pw.SizedBox(height: 16),
-          // Mostrar leyenda de filtros si existe
           if (leyendaFiltros != null && leyendaFiltros.isNotEmpty) ...[
             pw.Container(
               width: double.infinity,
@@ -63,7 +95,7 @@ class PdfService {
       ),
     );
 
-    // Guardar el PDF en Descargas y abrirlo
+    // Guardar el PDF en Descargas
     final bytes = await pdf.save();
     final nombreArchivo =
         '${titulo.toLowerCase().replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
@@ -74,39 +106,61 @@ class PdfService {
     );
   }
 
-  // Header del PDF con datos de la empresa
+  // Header del PDF con datos de la empresa + logo opcional
   static pw.Widget _buildHeader(
     String titulo,
     Configuracion config,
     String fechaGeneracion,
+    pw.ImageProvider? logoImage,
   ) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  config.nombreEmpresa,
-                  style: pw.TextStyle(
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
+            // Logo + datos de la empresa
+            pw.Expanded(
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  // Logo (si existe)
+                  if (logoImage != null)
+                    pw.Container(
+                      width: 50,
+                      height: 50,
+                      margin: const pw.EdgeInsets.only(right: 12),
+                      child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                    ),
+                  // Datos de la empresa
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          config.nombreEmpresa,
+                          style: pw.TextStyle(
+                            fontSize: 14,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                        if (config.cuit != null)
+                          pw.Text('CUIT: ${config.cuit}',
+                              style: const pw.TextStyle(fontSize: 9)),
+                        if (config.direccion != null)
+                          pw.Text(config.direccion!,
+                              style: const pw.TextStyle(fontSize: 9)),
+                        if (config.telefono != null)
+                          pw.Text('Tel: ${config.telefono}',
+                              style: const pw.TextStyle(fontSize: 9)),
+                      ],
+                    ),
                   ),
-                ),
-                if (config.cuit != null)
-                  pw.Text('CUIT: ${config.cuit}',
-                      style: const pw.TextStyle(fontSize: 10)),
-                if (config.direccion != null)
-                  pw.Text(config.direccion!,
-                      style: const pw.TextStyle(fontSize: 10)),
-                if (config.telefono != null)
-                  pw.Text('Tel: ${config.telefono}',
-                      style: const pw.TextStyle(fontSize: 10)),
-              ],
+                ],
+              ),
             ),
+            // Título + fecha
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.end,
               children: [

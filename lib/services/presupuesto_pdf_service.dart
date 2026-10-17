@@ -1,4 +1,5 @@
 import 'dart:io';
+//import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
@@ -7,6 +8,7 @@ import '../models/cliente.dart';
 import '../models/presupuesto.dart';
 import '../models/presupuesto_item.dart';
 import 'export_service.dart';
+import 'package:flutter/foundation.dart';
 
 class PresupuestoPdfService {
   static Future<void> generarPdfPresupuesto({
@@ -24,15 +26,27 @@ class PresupuestoPdfService {
     );
     final dateFormat = DateFormat('dd/MM/yyyy');
 
-    // Cargar logo si existe
+        // 🔥 Cargar logo si existe
     pw.ImageProvider? logoImage;
     if (config.logoPath != null) {
       try {
         final logoFile = File(config.logoPath!);
-        if (await logoFile.exists()) {
+        final existe = await logoFile.exists();
+        final tamanio = existe ? (await logoFile.stat()).size : 0;
+        
+        // 🔥 DEBUG
+        debugPrint('=== LOGO EN PDF ===');
+        debugPrint('Ruta: ${config.logoPath}');
+        debugPrint('Existe: $existe');
+        debugPrint('tamanio: $tamanio bytes');
+        debugPrint('===================');
+        
+        if (existe && tamanio > 0) {
           logoImage = pw.MemoryImage(await logoFile.readAsBytes());
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Error cargando logo: $e');
+      }
     }
 
     pdf.addPage(

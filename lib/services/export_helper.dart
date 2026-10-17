@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../database/configuracion_repository.dart';
 import 'export_service.dart';
 import 'pdf_service.dart';
+//import 'package:flutter/foundation.dart';
 
 class ExportHelper {
   // Muestra un diálogo para elegir CSV o PDF
@@ -170,6 +171,13 @@ class ExportHelper {
     String? leyendaFiltros,
   }) async {
     final config = await ConfiguracionRepository().get();
+
+    // 🔥 DEBUG
+    debugPrint('=== EXPORT HELPER ===');
+    debugPrint('Título: $titulo');
+    debugPrint('logoPath: ${config.logoPath}');
+    debugPrint('ID config: ${config.id}');
+    debugPrint('=====================');
 
     await PdfService.generarPdfTabla(
       titulo: titulo,
