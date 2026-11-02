@@ -1,54 +1,62 @@
-# app_inventario_flutter
+# 📦 Inventario Pro
 
-*** 
-Base de Datos: Documentos\inventario.db
+Sistema de gestión de inventario para PYMEs desarrollado en Flutter para Windows.
 
-Remove-Item "$env:USERPROFILE\Documents\inventario.db" -ErrorAction SilentlyContinue
+![Flutter](https://img.shields.io/badge/Flutter-3.44.1-blue?logo=flutter)
+![Dart](https://img.shields.io/badge/Dart-3.12.1-blue?logo=dart)
+![SQLite](https://img.shields.io/badge/SQLite-3.x-blue?logo=sqlite)
+![Windows](https://img.shields.io/badge/Windows-10%2B-blue?logo=windows)
+![License](https://img.shields.io/badge/License-Commercial-green)
 
-(C:\Users\***\AppData\Roaming\com.example\app_inventario_flutter)
+---
 
-***
+## 📋 Descripción
+
+**Inventario Pro** es una aplicación de escritorio completa para la gestión de inventario de pequeñas y medianas empresas. Permite administrar productos, proveedores, clientes, presupuestos y movimientos de stock, con generación de reportes y exportación a PDF/CSV.
+
+### ✨ Características principales
+
+- 📊 **Gestión de inventario:** productos con stock, precios, categorías, marcas y ubicaciones
+- 👥 **Administración de terceros:** proveedores y clientes con datos completos
+- 📝 **Presupuestos profesionales:** generación de PDF con logo de la empresa
+- 📈 **Movimientos de stock:** entradas, salidas y ajustes con historial
+- 📑 **Reportes y estadísticas:** dashboard con 9 reportes exportables
+- 💾 **Backup automático:** copias de seguridad diarias con rotación
+- 📤 **Exportación:** CSV y PDF en todos los módulos
+- 🔒 **Modo Demo:** 7 días de prueba con bloqueo automático
+
+---
+
+## 🖥️ Capturas de Pantalla
+
+Menu ![alt text](image-5.png)
+
+Dashboard ![alt text](image-1.png)
+
+Productos ![alt text](image-2.png)
+
+Presupuestos ![alt text](image-3.png)
+
+PDF ![alt text](image-4.png)
 
 
+## 🚀 Instalación
 
-A new Flutter project.
+### Requisitos
 
-lib/
-├── models/
-│   └── proveedor.dart         ✓ (Ya lo tienes)
-├── database/
-│   ├── database_helper.dart   # NUEVO: Gestión de DB
-│   └── proveedor_repository.dart  # NUEVO: Operaciones CRUD
-├── screens/
-│   ├── main_layout.dart       ✓ (Ya lo tienes)
-│   └── pages/
-│       ├── proveedores/
-│       │   ├── proveedores_page.dart     # Página principal
-│       │   ├── proveedores_list.dart     # Lista con búsqueda
-│       │   ├── proveedor_card.dart       # Tarjeta individual
-│       │   ├── proveedor_form.dart       # Formulario (Alta/Edición)
-│       │   └── proveedor_controller.dart # Lógica de negocio
-│       └── (otros pages...)
-└── widgets/
-    ├── main_app_bar.dart
-    ├── main_drawer.dart
-    ├── search_field.dart      # NUEVO: Campo de búsqueda reutilizable
-    └── confirmation_dialog.dart # NUEVO: Diálogo de confirmación
+- **Windows 10** o superior
+- **Visual Studio 2019** o superior (con C++ Desktop Development)
+- **Flutter SDK** 3.44.1 o superior
 
-=======================================================================
-El ejecutable queda en:
+### 🛠️ Tecnologías Utilizadas
 
-text
-build\windows\x64\runner\Release\app_inventario_flutter.exe
-Ese .exe se puede copiar a cualquier PC con Windows y funciona (aunque necesita los archivos .dll de la misma carpeta Release).
-
-==============================================================================
-
-BORRAR FECHA PARA DEMO:
-Remove-Item "$env:APPDATA\com.example\app_inventario_flutter\shared_preferences.json" -ErrorAction SilentlyContinue
-
-# Build DEMO (con límite de 7 días)
-flutter build windows --dart-define=IS_DEMO=true
-
-# Build FULL (sin límite)
-flutter build windows --dart-define=IS_DEMO=false
+- Flutter 3.44.1	Framework de UI
+- Dart 3.12.1	Lenguaje
+- SQLite (sqflite_common_ffi)	Base de datos local
+- Provider	Gestión de estado
+- pdf + printing	Generación de PDFs
+- csv	Exportación a CSV
+- file_picker	Selector de archivos
+- window_manager	Control de ventana nativa
+- shared_preferences	Configuración local
+- intl	Formateo de fechas y monedas
