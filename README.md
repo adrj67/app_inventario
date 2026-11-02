@@ -29,9 +29,7 @@ Sistema de gestión de inventario para PYMEs desarrollado en Flutter para Window
 
 ## 🖥️ Capturas de Pantalla
 
-Menu ![alt text](image-5.png)
-
-Dashboard ![alt text](image-1.png)
+Dashboard ![alt text](image-5.png)
 
 Productos ![alt text](image-2.png)
 
